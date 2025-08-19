@@ -1,4 +1,4 @@
 export const a = {
-  a: "FUNCIONA WOOOHOOOOOOO",
+  a: "HOLA DESDE JS REMOTO",
   b: "INCREÍBLE"
 };
