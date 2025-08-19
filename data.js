@@ -1,4 +1,4 @@
 export const a = {
-  a: "HOLA DESDE JS REMOTO",
+  a: "NOTA DEL DIA: INCREÍBLE.",
   b: "INCREÍBLE"
 };
