@@ -1,4 +1,1 @@
-export const a = {
-  a: "NOTA DEL DIA: Holaaaaaaaaaaa.",
-  b: "INCREÍBLE"
-};
+[{"id": "nota001", "text": "Hola, valor de propiedad nota001"}, {"id": "nota002", "text": "Hola, valor de propiedad nota002"}]
