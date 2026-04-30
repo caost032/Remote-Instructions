@@ -750,12 +750,12 @@
                 }
 
                 ctx.beginPath(); ctx.moveTo(0, -size*0.85); ctx.lineTo(-size*0.55, size*0.4); ctx.lineTo(0, size*0.2); ctx.lineTo(size*0.55, size*0.4); ctx.closePath();
-                ctx.fillStyle = '#7ab8d4'; ctx.fill(); ctx.strokeStyle = '#c0e0ff'; ctx.lineWidth = 1; ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(-size*0.5, size*0.1); ctx.lineTo(-size*0.95, size*0.5); ctx.lineTo(-size*0.45, size*0.5); ctx.fillStyle = '#5a9aba'; ctx.fill();
+                ctx.fillStyle = 'transparent'; ctx.fill(); ctx.strokeStyle = '#c0e0ff'; ctx.lineWidth = 2.5; ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-size*0.5, size*0.1); ctx.lineTo(-size*0.95, size*0.5); ctx.lineTo(-size*0.45, size*0.5); ctx.fillStyle = 'transparent'; ctx.fill();
                 ctx.beginPath(); ctx.moveTo(size*0.5, size*0.1); ctx.lineTo(size*0.95, size*0.5); ctx.lineTo(size*0.45, size*0.5); ctx.fill();
-                ctx.beginPath(); ctx.arc(0, -size*0.25, size*0.2, 0, Math.PI*2); ctx.fillStyle = '#b0e4ff'; ctx.fill();
-                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke();
-                ctx.fillStyle = '#2266aa'; ctx.beginPath(); ctx.arc(0, -size*0.28, size*0.09, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, -size*0.25, size*0.2, 0, Math.PI*2); ctx.fillStyle = 'transparent'; ctx.fill();
+                ctx.strokeStyle = 'transparent'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.fillStyle = 'transparent'; ctx.beginPath(); ctx.arc(0, -size*0.28, size*0.09, 0, Math.PI*2); ctx.fill();
 
                 if (hasReviveTotem) {
                     ctx.fillStyle = '#88ff88'; ctx.beginPath(); ctx.arc(size*0.55, -size*0.65, size*0.15, 0, Math.PI*2); ctx.fill();
