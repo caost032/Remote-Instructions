@@ -908,10 +908,10 @@
         // ========== POWER-UPS ==========
         function generatePowerUps() {
             powerUpsOnMap = [];
-            let toSpawn = Math.random() < 0.45 ? 2 : 1;
+            let toSpawn = Math.random() < 0.45 ? 5 : 1;
             const candidates = ['magnetCommon', 'shield', 'bombNormal', 'revive'];
             if (wave >= 5) candidates.push('speed');
-            if (wave >= 8) candidates.push('magnetEpic', 'bombLegendary', 'magnetLegendary');
+            if (wave >= 0) candidates.push('magnetEpic', 'bombLegendary', 'magnetLegendary');
             for (let i = 0; i < Math.min(toSpawn, 3); i++) {
                 if (Math.random() > 0.68) continue;
                 const typeKey = candidates[Math.floor(Math.random() * candidates.length)];
@@ -923,7 +923,7 @@
                     collectibles.some(c => c.x === x && c.y === y) ||
                     premiumCollectibles.some(c => c.x === x && c.y === y) ||
                     powerUpsOnMap.some(p => p.x === x && p.y === y));
-                powerUpsOnMap.push({ type: typeKey, x, y, expires: Date.now() + 26000 + Math.random() * 14000 });
+                powerUpsOnMap.push({ type: typeKey, x, y, expires: Date.now() + 15000 + Math.random() * 14000 });
             }
         }
 
@@ -1535,6 +1535,7 @@
                 ctx.fillStyle = '#cccccc';
                 ctx.fillText('Toca cualquier botón', canvas.width / 2, canvas.height / 2 + 65);
                 ctx.fillText('para REINICIAR', canvas.width / 2, canvas.height / 2 + 95);
+                
             }
         }
 
@@ -1642,6 +1643,16 @@
                 }
             }
             draw();
+            // ==================== REINICIO AL TOCAR BOTONES EN GAME OVER ====================
+const restartOnTouch = (e) => {
+    if (gameOver) {
+        e.preventDefault();
+        resetGame();
+    }
+};
+
+document.addEventListener('touchstart', restartOnTouch, { passive: false });
+document.addEventListener('mousedown', restartOnTouch);
             requestAnimationFrame(gameLoop);
         }
 
