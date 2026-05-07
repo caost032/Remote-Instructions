@@ -1,0 +1,4774 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ODPAR PREMIUM v4.0 ULTIMATE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      
+    
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      height: 100vh;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+    }
+    
+    .display {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+      background: radial-gradient(circle at 30% 20%, #0a0f1a, #000000);
+      perspective: 1000px;
+    }
+    
+    .pantalla {
+      width: 100%;
+      max-width: 560px;
+      height: 60vh;
+      max-height: 520px;
+      background: transparent;
+      perspective: 800px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      position: relative;
+    }
+    
+    canvas {
+      image-rendering: pixelated;
+      width: 85%;
+      height: 85%;
+      max-width: 560px;
+      max-height: 560px;
+      transform: rotateX(40deg);
+      transition: transform 1s ease-out;
+    }
+    
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      pointer-events: none;
+      z-index: 10;
+      gap: 4px;
+    }
+    
+    .hud-item {
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      min-width: 80px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    
+    #scoreDisplay {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .botones {
+      width: 100%;
+      max-width: 560px;
+      height: 50%;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 5px;
+    }
+    
+    .centerbotones {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      max-width: 400px;
+      gap: 3%;
+    }
+    
+    .fila-botones {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 30%;
+      gap: 4%;
+      background: transparent;
+    }
+    
+    .boton {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 28%;
+      height: 100%;
+      background: #0a0f1a;
+      border-bottom: solid lightcyan 8px;
+      border-radius: 20%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      transition: all 0.05s linear;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+    }
+    
+    .boton.activo {
+      transform: translateY(4px);
+      border-bottom-width: 4px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      background: #1a2a3a;
+    }
+    
+    .boton svg {
+      width: 65%;
+      height: 65%;
+      fill: #bbffff;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+      pointer-events: none;
+    }
+    
+    .boton.vacio {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      pointer-events: none;
+      cursor: default;
+    }
+    
+    .boton.vacio svg {
+      display: none;
+    }
+    
+    @media (max-width: 550px) {
+      .hud-item {
+        font-size: 7px;
+        padding: 2px 5px;
+      }
+      
+      .boton {
+        width: 27%;
+        border-bottom-width: 6px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="display">
+    <section class="pantalla">
+      <div id="hud">
+        <div id="scoreDisplay" class="hud-item">
+          <span>SCORE: <span id="score">000000</span></span>
+          <span>HIGH: <span id="highScore">000000</span></span>
+          <span>OLA: <span id="waveSpan">1</span></span>
+          <span>ESQ: <span id="evadedSpan">0</span></span>
+        </div>
+        <div id="hud-weather" class="hud-item"></div>
+        <div id="hud-combo" class="hud-item"></div>
+        <div id="hud-effects" class="hud-item"></div>
+        <div id="hud-inventory" class="hud-item"></div>
+      </div>
+      <canvas id="game" width="560" height="560"></canvas>
+    </section>
+    <section class="botones">
+      <section class="centerbotones" id="centerbotones"></section>
+    </section>
+  </section>
+  
+  <script>
+    (function() {
+      'use strict';
+      
+      // ═══════════════════════════════════════
+      // CONSTANTES GLOBALES
+      // ═══════════════════════════════════════
+      const CANVAS_SIZE = 560;
+      const MAX_PARTICLES = 150;
+      const SAVE_VERSION = 4;
+      const INITIAL_GRID_SIZE = 20;
+      
+      // ═══════════════════════════════════════
+      // AUDIO MANAGER
+      // ═══════════════════════════════════════
+      class AudioManager {
+        constructor() {
+          try {
+            this.ctx = new(window.AudioContext || window.webkitAudioContext)();
+          } catch (e) { this.ctx = null; }
+          if (!this.ctx) { this.isSuspended = true; return; }
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.value = 0.5;
+          this.masterGain.connect(this.ctx.destination);
+          this.activeOscillators = [];
+          this.ambientNodes = {};
+          this._masterFilter = null;
+          this.isSuspended = true;
+        }
+        resume() {
+          if (!this.ctx) return Promise.resolve();
+          if (this.ctx.state === 'suspended') return this.ctx.resume().then(() => { this.isSuspended = false; });
+          this.isSuspended = false;
+          return Promise.resolve();
+        }
+        playSfx(freq, durationMs, type = 'square', volume = 0.3, delayMs = 0) {
+          if (this.isSuspended || !this.ctx) return;
+          try {
+            const now = this.ctx.currentTime + delayMs / 1000;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(Math.max(10, freq), now);
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + Math.max(0.01, durationMs / 1000));
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(now);
+            osc.stop(now + durationMs / 1000 + 0.05);
+            this.activeOscillators.push({ osc, gain });
+            setTimeout(() => { this.activeOscillators = this.activeOscillators.filter(o => o.osc !== osc); }, durationMs + delayMs + 300);
+          } catch (e) {}
+        }
+        generateNoiseBuffer(noiseType = 'white', durationSec = 2) {
+          if (!this.ctx) return null;
+          const bufferSize = this.ctx.sampleRate * durationSec;
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            if (noiseType === 'white') data[i] = Math.random() * 2 - 1;
+            else if (noiseType === 'pink') data[i] = (Math.random() + Math.random() + Math.random()) / 3 * 2 - 1;
+            else data[i] = ((i > 0 ? data[i - 1] : 0) + Math.random() * 0.2 - 0.1) * 0.98;
+          }
+          return buffer;
+        }
+        playAmbient(name, volume = 0.1, noiseType = 'white') {
+          if (this.isSuspended || !this.ctx) return;
+          this.stopAmbient(name, 0);
+          try {
+            const buffer = this.generateNoiseBuffer(noiseType, 3);
+            if (!buffer) return;
+            const source = this.ctx.createBufferSource();
+            const gain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            source.buffer = buffer;
+            source.loop = true;
+            gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 1);
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterGain);
+            source.start();
+            this.ambientNodes[name] = { source, gain, filter };
+          } catch (e) {}
+        }
+        stopAmbient(name, fadeMs = 1000) {
+          const node = this.ambientNodes[name];
+          if (!node || !this.ctx) return;
+          try {
+            const endTime = this.ctx.currentTime + fadeMs / 1000;
+            node.gain.gain.linearRampToValueAtTime(0, endTime);
+            setTimeout(() => { try { node.source.stop(); } catch (e) {} delete this.ambientNodes[name]; }, fadeMs + 100);
+          } catch (e) { delete this.ambientNodes[name]; }
+        }
+        setFilter(type, frequency, Q = 1) {
+          if (!this.ctx) return;
+          try {
+            if (!this._masterFilter) {
+              this._masterFilter = this.ctx.createBiquadFilter();
+              this.masterGain.disconnect();
+              this.masterGain.connect(this._masterFilter);
+              this._masterFilter.connect(this.ctx.destination);
+            }
+            this._masterFilter.type = type;
+            this._masterFilter.frequency.linearRampToValueAtTime(frequency, this.ctx.currentTime + 0.5);
+            this._masterFilter.Q.value = Q;
+          } catch (e) {}
+        }
+        clearFilter() {
+          if (!this.ctx || !this._masterFilter) return;
+          try {
+            this.masterGain.disconnect();
+            this._masterFilter.disconnect();
+            this.masterGain.connect(this.ctx.destination);
+            this._masterFilter = null;
+          } catch (e) {}
+        }
+        vibrate(pattern) {
+          if (navigator.vibrate && AccessibilityOptions.vibrationEnabled)
+          try { navigator.vibrate(pattern); } catch(e) {};
+        }
+        stopAll() {
+          this.activeOscillators.forEach(o => { try { o.osc.stop(); } catch (e) {} });
+          this.activeOscillators = [];
+          Object.keys(this.ambientNodes).forEach(n => this.stopAmbient(n, 0));
+          this.clearFilter();
+        }
+      }
+      const audioManager = new AudioManager();
+      document.addEventListener('click', () => audioManager.resume(), { once: true });
+      document.addEventListener('touchstart', () => audioManager.resume(), { once: true });
+      document.addEventListener('keydown', () => audioManager.resume(), { once: true });
+      
+      // ═══════════════════════════════════════
+      // TIMER MANAGER
+      // ═══════════════════════════════════════
+      class TimerManager {
+        constructor() { this.timers = []; }
+        add(callback, delayMs) {
+          const timer = { callback, delay: delayMs, elapsed: 0, done: false, id: Math.random() + Date.now() };
+          this.timers.push(timer);
+          return timer.id;
+        }
+        cancel(id) { const t = this.timers.find(t => t.id === id); if (t) t.done = true; }
+        update(dt) {
+          for (let i = this.timers.length - 1; i >= 0; i--) {
+            const t = this.timers[i];
+            if (t.done) { this.timers.splice(i, 1); continue; }
+            t.elapsed += dt * 1000;
+            if (t.elapsed >= t.delay) { try { t.callback(); } catch (e) { console.warn('Timer err:', e); } t.done = true; }
+          }
+        }
+        clearAll() { this.timers = []; }
+      }
+      const timers = new TimerManager();
+      
+      // ═══════════════════════════════════════
+      // PARTICLE POOL
+      // ═══════════════════════════════════════
+      class ParticlePool {
+        constructor(maxSize) {
+          this.pool = [];
+          this.active = [];
+          for (let i = 0; i < maxSize; i++)
+            this.pool.push({ x: 0, y: 0, vx: 0, vy: 0, life: 0, color: '#fff', size: 2, type: 'square', gravity: 0.05 });
+        }
+        spawn(x, y, color, type = 'square', count = 1, sizeBoost = 1) {
+          for (let i = 0; i < count; i++) {
+            const p = this.pool.pop();
+            if (!p) return;
+            p.x = x;
+            p.y = y;
+            p.vx = (Math.random() - 0.5) * 5;
+            p.vy = (Math.random() - 0.5) * 5 - 2;
+            p.life = 1;
+            p.color = color;
+            p.size = (Math.random() * 5 + 2) * sizeBoost;
+            p.type = type;
+            p.gravity = 0.05;
+            this.active.push(p);
+          }
+        }
+        updateAndDraw(ctx) {
+          for (let i = this.active.length - 1; i >= 0; i--) {
+            const p = this.active[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.life -= 0.02;
+            if (p.life <= 0) {
+              this.pool.push(p);
+              this.active.splice(i, 1);
+              continue;
+            }
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            if (p.type === 'square') ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+            else {
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.restore();
+          }
+        }
+        clear() {
+          this.active.forEach(p => this.pool.push(p));
+          this.active = [];
+        }
+      }
+      const particlePool = new ParticlePool(MAX_PARTICLES);
+      
+      function createExplosion(x, y, count, color, sizeBoost = 1) {
+        particlePool.spawn(x, y, color, 'square', count, sizeBoost);
+      }
+      
+      function createSpark(x, y, angle) {
+        for (let i = 0; i < 2; i++) {
+          const speed = 4 + Math.random() * 3;
+          const vx = Math.cos(angle) * speed * (0.7 + Math.random() * 0.6);
+          const vy = Math.sin(angle) * speed * (0.7 + Math.random() * 0.6);
+          particlePool.spawn(x, y, '#00ddff', 'square', 1, 1.5);
+          if (particlePool.active.length > 0) {
+            const last = particlePool.active[particlePool.active.length - 1];
+            last.vx = vx;
+            last.vy = vy;
+          }
+        }
+      }
+      
+      // ═══════════════════════════════════════
+      // PALETAS
+      // ═══════════════════════════════════════
+      const PALETTES = {
+        fire: ["#ff4400", "#ff8800", "#ffcc00", "#ff2200", "#ff6600"],
+        ice: ["#00ccff", "#0088ff", "#00ffcc", "#88ffff", "#aaddff"],
+        neon: ["#ff00ff", "#00ffff", "#ffcc00", "#00ff00", "#ff0088"],
+        gold: ["#ffd700", "#ffb800", "#ffaa00", "#ff8c00", "#ffe066"],
+        poison: ["#88ff00", "#44ff44", "#00ff88", "#aaff00", "#ccff44"],
+        plasma: ["#ff00ff", "#aa00ff", "#ff0088", "#ff44cc", "#dd00ff"],
+        cosmic: ["#1a0033", "#4b0082", "#8a2be2", "#00bfff", "#e0b0ff"],
+        lava: ["#4a0000", "#8b0000", "#ff4500", "#ff6347", "#ffd700"],
+        ocean: ["#001f3f", "#0074d9", "#7fdbff", "#39cccc", "#01ff70"],
+        sunset: ["#ff6b6b", "#ffa07a", "#ffd93d", "#ff8c42", "#c4496b"],
+        forest: ["#0b3d0b", "#228b22", "#32cd32", "#adff2f", "#f0e68c"],
+        crystal: ["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#00bcd4"],
+        ember: ["#1a0a00", "#3d1a00", "#cc3300", "#ff6600", "#ffcc33"],
+        twilight: ["#191970", "#483d8b", "#6a5acd", "#9370db", "#dda0dd"],
+        candy: ["#ffb3ba", "#ffdfba", "#ffffba", "#baffc9", "#bae1ff"],
+        cyber: ["#00ff41", "#008f11", "#00ffcc", "#ff00ff", "#0000ff"],
+        magma: ["#0a0000", "#3d0000", "#ff0000", "#ff4444", "#ffaaaa"],
+        arctic: ["#e8f4f8", "#b8e6f0", "#7dd3e8", "#4db8d0", "#1a8fa8"],
+        galaxy: ["#0d0d2b", "#2d1b69", "#6b3fa0", "#b44cc6", "#ff69b4"],
+        retro: ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ffeaa7"],
+        synthwave: ["#ff007f", "#7b00ff", "#00e5ff", "#ffdd00", "#ff0080"],
+        autumn: ["#8b4513", "#d2691e", "#f4a460", "#ffd700", "#ff6347"],
+        spring: ["#ffe4e1", "#ffb7c5", "#98fb98", "#87ceeb", "#dda0dd"],
+        midnight: ["#000033", "#000066", "#0000cc", "#3333ff", "#6666ff"],
+        rust: ["#3d1a00", "#8b4513", "#cd853f", "#deb887", "#f5deb3"],
+        hologram: ["#ccffff", "#99ffff", "#66ffff", "#33ffff", "#00ffff"],
+        matrix: ["#003b00", "#008f11", "#00ff41", "#00ff88", "#aaffaa"],
+        vaporwave: ["#ff71ce", "#01cdfe", "#05ffa1", "#b967ff", "#fffb96"]
+      };
+      
+      // ═══════════════════════════════════════
+      // FUENTES PIXEL
+      // ═══════════════════════════════════════
+      const FONT_5 = {
+        'A': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 0, 1]
+        ],
+        'B': [
+          [1, 1, 0],
+          [1, 0, 1],
+          [1, 1, 0],
+          [1, 0, 1],
+          [1, 1, 0]
+        ],
+        'C': [
+          [0, 1, 1],
+          [1, 0, 0],
+          [1, 0, 0],
+          [1, 0, 0],
+          [0, 1, 1]
+        ],
+        'D': [
+          [1, 1, 0],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 1, 0]
+        ],
+        'E': [
+          [1, 1, 1],
+          [1, 0, 0],
+          [1, 1, 0],
+          [1, 0, 0],
+          [1, 1, 1]
+        ],
+        'F': [
+          [1, 1, 1],
+          [1, 0, 0],
+          [1, 1, 0],
+          [1, 0, 0],
+          [1, 0, 0]
+        ],
+        'G': [
+          [0, 1, 1],
+          [1, 0, 0],
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 1]
+        ],
+        'H': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 0, 1]
+        ],
+        'I': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0],
+          [1, 1, 1]
+        ],
+        'J': [
+          [0, 0, 1],
+          [0, 0, 1],
+          [0, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        'K': [
+          [1, 0, 1],
+          [1, 1, 0],
+          [1, 0, 0],
+          [1, 1, 0],
+          [1, 0, 1]
+        ],
+        'L': [
+          [1, 0, 0],
+          [1, 0, 0],
+          [1, 0, 0],
+          [1, 0, 0],
+          [1, 1, 1]
+        ],
+        'M': [
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1]
+        ],
+        'N': [
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 0, 1]
+        ],
+        'O': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        'P': [
+          [1, 1, 0],
+          [1, 0, 1],
+          [1, 1, 0],
+          [1, 0, 0],
+          [1, 0, 0]
+        ],
+        'Q': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 1, 0],
+          [0, 1, 1]
+        ],
+        'R': [
+          [1, 1, 0],
+          [1, 0, 1],
+          [1, 1, 0],
+          [1, 1, 0],
+          [1, 0, 1]
+        ],
+        'S': [
+          [0, 1, 1],
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1],
+          [1, 1, 0]
+        ],
+        'T': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0]
+        ],
+        'U': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        'V': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        'W': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 1, 1],
+          [1, 0, 1]
+        ],
+        'X': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0],
+          [1, 0, 1],
+          [1, 0, 1]
+        ],
+        'Y': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0]
+        ],
+        'Z': [
+          [1, 1, 1],
+          [0, 0, 1],
+          [0, 1, 0],
+          [1, 0, 0],
+          [1, 1, 1]
+        ],
+        '!': [
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 0, 0],
+          [0, 1, 0]
+        ],
+        '?': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [0, 0, 1],
+          [0, 1, 0],
+          [0, 0, 0],
+          [0, 1, 0]
+        ],
+        '0': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        '1': [
+          [0, 1, 0],
+          [1, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0],
+          [1, 1, 1]
+        ],
+        '2': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [0, 0, 1],
+          [0, 1, 0],
+          [1, 1, 1]
+        ],
+        '3': [
+          [1, 1, 0],
+          [0, 0, 1],
+          [0, 1, 0],
+          [0, 0, 1],
+          [1, 1, 0]
+        ],
+        '4': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 1],
+          [0, 0, 1],
+          [0, 0, 1]
+        ],
+        '5': [
+          [1, 1, 1],
+          [1, 0, 0],
+          [1, 1, 0],
+          [0, 0, 1],
+          [1, 1, 0]
+        ],
+        '6': [
+          [0, 1, 0],
+          [1, 0, 0],
+          [1, 1, 0],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        '7': [
+          [1, 1, 1],
+          [0, 0, 1],
+          [0, 1, 0],
+          [0, 1, 0],
+          [0, 1, 0]
+        ],
+        '8': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [0, 1, 0],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        '9': [
+          [0, 1, 0],
+          [1, 0, 1],
+          [0, 1, 1],
+          [0, 0, 1],
+          [0, 1, 0]
+        ],
+        ' ': [
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0]
+        ]
+      };
+      const FONT_3 = {
+        'A': [
+          [1, 1, 1],
+          [1, 1, 1],
+          [0, 1, 0]
+        ],
+        'B': [
+          [1, 1, 0],
+          [1, 1, 1],
+          [1, 1, 0]
+        ],
+        'C': [
+          [1, 1, 1],
+          [1, 0, 0],
+          [1, 1, 1]
+        ],
+        'D': [
+          [1, 1, 0],
+          [1, 0, 1],
+          [1, 1, 0]
+        ],
+        'E': [
+          [1, 1, 1],
+          [1, 1, 0],
+          [1, 1, 1]
+        ],
+        'F': [
+          [1, 1, 1],
+          [1, 1, 0],
+          [1, 0, 0]
+        ],
+        'G': [
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 1, 1]
+        ],
+        'H': [
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 0, 1]
+        ],
+        'I': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [1, 1, 1]
+        ],
+        'J': [
+          [0, 1, 1],
+          [0, 0, 1],
+          [1, 1, 0]
+        ],
+        'K': [
+          [1, 0, 1],
+          [1, 1, 0],
+          [1, 0, 1]
+        ],
+        'L': [
+          [1, 0, 0],
+          [1, 0, 0],
+          [1, 1, 1]
+        ],
+        'M': [
+          [1, 1, 1],
+          [1, 1, 1],
+          [1, 0, 1]
+        ],
+        'N': [
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 0, 1]
+        ],
+        'O': [
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 1, 1]
+        ],
+        'P': [
+          [1, 1, 1],
+          [1, 1, 1],
+          [1, 0, 0]
+        ],
+        'Q': [
+          [1, 1, 1],
+          [1, 1, 1],
+          [0, 1, 1]
+        ],
+        'R': [
+          [1, 1, 1],
+          [1, 1, 0],
+          [1, 0, 1]
+        ],
+        'S': [
+          [0, 1, 1],
+          [0, 1, 0],
+          [1, 1, 0]
+        ],
+        'T': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [0, 1, 0]
+        ],
+        'U': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [1, 1, 1]
+        ],
+        'V': [
+          [1, 0, 1],
+          [1, 0, 1],
+          [0, 1, 0]
+        ],
+        'W': [
+          [1, 0, 1],
+          [1, 1, 1],
+          [1, 1, 1]
+        ],
+        'X': [
+          [1, 0, 1],
+          [0, 1, 0],
+          [1, 0, 1]
+        ],
+        'Y': [
+          [1, 0, 1],
+          [0, 1, 0],
+          [0, 1, 0]
+        ],
+        'Z': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [1, 1, 1]
+        ],
+        '!': [
+          [1],
+          [0],
+          [1]
+        ],
+        '?': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [0, 0, 0],
+          [0, 1, 0]
+        ],
+        '0': [
+          [1, 1, 1],
+          [1, 0, 1],
+          [1, 1, 1]
+        ],
+        '1': [
+          [0, 1, 0],
+          [1, 1, 0],
+          [0, 1, 0]
+        ],
+        '2': [
+          [1, 1, 1],
+          [0, 1, 0],
+          [1, 1, 1]
+        ],
+        '3': [
+          [1, 1, 1],
+          [0, 1, 1],
+          [1, 1, 1]
+        ],
+        '4': [
+          [1, 0, 1],
+          [1, 1, 1],
+          [0, 0, 1]
+        ],
+        '5': [
+          [1, 1, 1],
+          [1, 1, 0],
+          [1, 1, 1]
+        ],
+        '6': [
+          [1, 1, 1],
+          [1, 1, 0],
+          [1, 1, 1]
+        ],
+        '7': [
+          [1, 1, 1],
+          [0, 0, 1],
+          [0, 1, 0]
+        ],
+        '8': [
+          [1, 1, 1],
+          [1, 1, 1],
+          [1, 1, 1]
+        ],
+        '9': [
+          [1, 1, 1],
+          [1, 1, 1],
+          [0, 0, 1]
+        ],
+        ' ': [
+          [0],
+          [0],
+          [0]
+        ]
+      };
+      // ═══════════════════════════════════════
+      // ACCESIBILIDAD
+      // ═══════════════════════════════════════
+      const AccessibilityOptions = { fontSize: 1.0, colorBlindMode: false, reduceFlashes: false, vibrationEnabled: true };
+      
+      function loadAccessibility() {
+        try {
+          const saved = localStorage.getItem('odparA11y');
+          if (saved) Object.assign(AccessibilityOptions, JSON.parse(saved));
+        } catch (e) {}
+      }
+      loadAccessibility();
+      
+      // ═══════════════════════════════════════
+      // SONIDOS
+      // ═══════════════════════════════════════
+      function playSound(freq, duration, type = 'square', volume = 0.3) { audioManager.playSfx(freq, duration, type, volume); }
+      
+      function playMoveSound() { audioManager.playSfx(10000, 120, 'square', 0.1); }
+      
+      function playNormalCollect() {
+        audioManager.playSfx(880, 30, 'square', 0.5);
+        audioManager.playSfx(1320, 45, 'square', 0.4, 25);
+      }
+      
+      function playPremiumCollect() {
+        audioManager.playSfx(660, 50, 'sawtooth', 0.55);
+        audioManager.playSfx(990, 60, 'sawtooth', 0.5, 40);
+        audioManager.playSfx(1480, 80, 'triangle', 0.45, 90);
+        audioManager.playSfx(1980, 110, 'sine', 0.35, 140);
+      }
+      
+      function playHitSound() {
+        audioManager.playSfx(160, 140, 'sawtooth', 0.85);
+        audioManager.playSfx(80, 240, 'square', 0.7, 100);
+      }
+      
+      function playLevelComplete() {
+        audioManager.playSfx(1200, 80, 'sine', 0.45);
+        audioManager.playSfx(1600, 80, 'sine', 0.5, 110);
+        audioManager.playSfx(2100, 130, 'sine', 0.55, 240);
+        audioManager.playSfx(2600, 200, 'triangle', 0.4, 400);
+      }
+      
+      function playSafeZoneEnter() {
+        audioManager.playSfx(1240, 70, 'sine', 0.6);
+        audioManager.playSfx(1860, 90, 'sine', 0.5, 60);
+        audioManager.playSfx(2480, 120, 'triangle', 0.4, 130);
+      }
+      
+      function playSafeZoneHum() { audioManager.playSfx(920, 50, 'triangle', 0.1); }
+      
+      function playBonusCollect() {
+        audioManager.playSfx(1500, 40, 'sine', 0.4);
+        audioManager.playSfx(2000, 50, 'sine', 0.4, 50);
+      }
+      
+      function playDoubleBonusCollect() {
+        audioManager.playSfx(2000, 40, 'triangle', 0.5);
+        audioManager.playSfx(2500, 50, 'triangle', 0.5, 50);
+        audioManager.playSfx(3000, 60, 'sine', 0.5, 100);
+      }
+      
+      function playTripleBonusCollect() {
+        audioManager.playSfx(3000, 40, 'sine', 0.6);
+        audioManager.playSfx(4500, 50, 'triangle', 0.6, 40);
+        audioManager.playSfx(6000, 70, 'sawtooth', 0.5, 80);
+      }
+      
+      const SPECIAL_SOUNDS = {
+        bossWarning: () => {
+          audioManager.playSfx(200, 500, 'sawtooth', 0.8);
+          audioManager.playSfx(150, 700, 'square', 0.6, 300);
+        },
+        perfect: () => {
+          [1200, 1400, 1600, 1800, 2000].forEach((f, i) => audioManager.playSfx(f, 100, 'sine', 0.4, i * 80));
+        },
+        speedBoost: () => {
+          audioManager.playSfx(1800, 50, 'square', 0.5);
+          audioManager.playSfx(2200, 60, 'square', 0.5, 50);
+        },
+        collectRare: () => {
+          [800, 1000, 1200, 1400, 1600].forEach((f, i) => audioManager.playSfx(f, 60, 'sine', 0.35, i * 40));
+        },
+        powerUpActivate: () => {
+          audioManager.playSfx(600, 80, 'triangle', 0.6);
+          audioManager.playSfx(900, 100, 'triangle', 0.5, 70);
+          audioManager.playSfx(1200, 120, 'sine', 0.4, 140);
+        },
+        damageWarning: () => {
+          audioManager.playSfx(100, 200, 'sawtooth', 0.7);
+          audioManager.playSfx(150, 300, 'square', 0.6, 150);
+        },
+        waveStart: () => {
+          [400, 600, 800, 1000, 1200].forEach((f, i) => audioManager.playSfx(f, 100, 'triangle', 0.5, i * 60));
+        },
+        comboMilestone: (combo) => {
+          const notes = [523, 659, 784, 1047, 1318, 1568];
+          notes.slice(0, Math.min(combo, 6)).forEach((f, i) => audioManager.playSfx(f, 80, 'sine', 0.5, i * 60));
+        },
+        enemyDefeated: () => {
+          audioManager.playSfx(440, 40, 'square', 0.4);
+          audioManager.playSfx(330, 50, 'triangle', 0.3, 40);
+          audioManager.playSfx(220, 60, 'sawtooth', 0.2, 80);
+        },
+        shieldBreak: () => {
+          audioManager.playSfx(1200, 30, 'square', 0.6);
+          audioManager.playSfx(600, 80, 'sawtooth', 0.5, 30);
+          audioManager.playSfx(300, 120, 'triangle', 0.4, 100);
+        },
+        reviveReady: () => {
+          [600, 800, 1000, 1200, 1400, 1600].forEach((f, i) => audioManager.playSfx(f, 70, 'sine', 0.4, i * 50));
+        },
+        megaExplosion: () => {
+          audioManager.playSfx(100, 600, 'sawtooth', 0.9);
+          audioManager.playSfx(50, 800, 'square', 0.7, 100);
+          audioManager.playSfx(200, 400, 'triangle', 0.6, 200);
+        },
+        levelUp: () => {
+          [523, 659, 784, 1047, 1318, 1568, 2093].forEach((f, i) => audioManager.playSfx(f, 90, 'sine', 0.45, i * 50));
+        },
+        starPower: () => { for (let i = 0; i < 8; i++) audioManager.playSfx(800 + Math.random() * 1600, 70, 'sine', 0.4, i * 40); },
+        teleport: () => {
+          audioManager.playSfx(2000, 40, 'sine', 0.5);
+          audioManager.playSfx(4000, 50, 'sine', 0.3, 30);
+          audioManager.playSfx(6000, 60, 'sine', 0.1, 60);
+        },
+        rainDrop: () => { audioManager.playSfx(3000 + Math.random() * 2000, 80, 'sine', 0.08); },
+        thunder: () => {
+          audioManager.playSfx(40, 800, 'sawtooth', 0.6);
+          audioManager.playSfx(60, 500, 'square', 0.4, 100);
+        },
+        laser: () => {
+          audioManager.playSfx(1000, 100, 'sawtooth', 0.7);
+          audioManager.playSfx(1500, 80, 'square', 0.5, 50);
+        },
+        blackHole: () => { audioManager.playSfx(80, 600, 'sine', 0.6); },
+        earthquake: () => {
+          audioManager.playSfx(40, 800, 'sawtooth', 0.8);
+          audioManager.vibrate([200, 100, 200]);
+        },
+        berserk: () => {
+          audioManager.playSfx(600, 150, 'square', 0.6);
+          audioManager.playSfx(800, 100, 'square', 0.5, 80);
+        },
+        phase: () => { audioManager.playSfx(300, 400, 'triangle', 0.3); }
+      };
+      // ═══════════════════════════════════════
+      // CLIMA
+      // ═══════════════════════════════════════
+      const WEATHER_CONFIG = {
+        transitionDuration: 1500,
+        defaultWeather: "none",
+        autoWeatherOnWave: true
+      };
+      
+      const WEATHER_TYPES = {
+        rain: {
+          name: "Lluvia",
+          particles: { type: "rain", count: 80, speed: { min: 6, max: 12 }, length: { min: 8, max: 15 }, opacity: { min: 0.1, max: 0.3 } },
+          lighting: { ambientAlpha: 0.05, ambientColor: "#aaccff", vignette: 0.1, flashFrequency: 0.002, flashColor: "#ffffff" },
+          enemyModifiers: { speedMultiplier: 0.9 },
+          playerModifiers: { speedMultiplier: 1.0 },
+          soundscape: { ambientLoop: "rain_loop", ambientVolume: 0.15, randomSounds: [{ sound: "thunder", probability: 0.002 }] },
+          gameplayModifiers: { doublePoints: false, safeZoneDisabled: false }
+        },
+        snow: {
+          name: "Nieve",
+          particles: { type: "snow", count: 60, speed: { min: 0.5, max: 2 }, size: { min: 2, max: 6 }, opacity: { min: 0.3, max: 0.6 } },
+          lighting: { ambientAlpha: 0.06, ambientColor: "#ffffff", vignette: 0.12 },
+          enemyModifiers: { speedMultiplier: 0.8 },
+          playerModifiers: { speedMultiplier: 0.9 },
+          soundscape: { ambientLoop: "snow_wind", ambientVolume: 0.12 },
+          gameplayModifiers: { safeZoneDisabled: false }
+        },
+        stars: {
+          name: "Estrellado",
+          particles: { type: "stars", count: 100, speed: { min: 0.02, max: 0.08 }, size: { min: 1, max: 2.5 }, opacity: { min: 0.3, max: 0.6 } },
+          lighting: { ambientAlpha: 0.08, ambientColor: "#000022", vignette: 0.15 },
+          enemyModifiers: { speedMultiplier: 1.1 },
+          playerModifiers: { speedMultiplier: 1.0 },
+          gameplayModifiers: { doublePoints: true, safeZoneDisabled: false }
+        },
+        fog: {
+          name: "Neblina",
+          particles: { type: "fog", count: 40, speed: { min: 0.3, max: 0.7 }, size: { min: 40, max: 120 }, opacity: { min: 0.03, max: 0.06 } },
+          lighting: { ambientAlpha: 0.12, ambientColor: "#cccccc", vignette: 0.25 },
+          enemyModifiers: { speedMultiplier: 0.7 },
+          playerModifiers: { speedMultiplier: 1.0 },
+          gameplayModifiers: { safeZoneDisabled: true }
+        },
+        thunderstorm: {
+          name: "Tormenta eléctrica",
+          particles: { type: "rain", count: 130, speed: { min: 12, max: 22 }, opacity: { min: 0.2, max: 0.5 } },
+          lighting: { flashFrequency: 0.4, flashColor: "#ffff00", ambientAlpha: 0.05, ambientColor: "#aaccff", vignette: 0.15 },
+          enemyModifiers: { speedMultiplier: 1.1 },
+          playerModifiers: { speedMultiplier: 1.0 },
+          soundscape: { randomSounds: [{ sound: "thunder", probability: 0.01 }] },
+          gameplayModifiers: { safeZoneDisabled: true, doublePoints: true }
+        },
+        eclipse: {
+          name: "Eclipse",
+          particles: null,
+          lighting: { ambientAlpha: 0.35, ambientColor: "#220022", vignette: 0.55 },
+          enemyModifiers: { speedMultiplier: 0.7 },
+          playerModifiers: { speedMultiplier: 1.0 },
+          gameplayModifiers: { bossRush: true, safeZoneDisabled: false }
+        },
+        nebula: {
+          name: "Nebulosa",
+          particles: { type: "sparks", count: 120, speed: { min: 0.2, max: 0.8 }, opacity: { min: 0.1, max: 0.4 } },
+          lighting: { ambientAlpha: 0.08, ambientColor: "#ff88ff", vignette: 0.1 },
+          enemyModifiers: { speedMultiplier: 1.0 },
+          playerModifiers: { speedMultiplier: 1.0 },
+          gameplayModifiers: { safeZoneDisabled: false, doublePoints: false }
+        },
+        inferno: {
+          name: "Infierno",
+          particles: { type: "fireflies", count: 80, speed: { min: 1, max: 3 }, opacity: { min: 0.3, max: 0.7 } },
+          lighting: { ambientAlpha: 0.18, ambientColor: "#ff2200", vignette: 0.35 },
+          enemyModifiers: { speedMultiplier: 1.3 },
+          playerModifiers: { speedMultiplier: 1.2 },
+          gameplayModifiers: { safeZoneDisabled: true }
+        },
+        none: {
+          name: "Despejado",
+          particles: null,
+          lighting: null,
+          gridOverrides: null,
+          playerModifiers: null,
+          enemyModifiers: null,
+          soundscape: null,
+          gameplayModifiers: null
+        }
+      };
+      
+    const WEATHER_SCHEDULE = [
+  { from: 1, to: 99, randomPool: ["thunderstorm", "eclipse", "inferno", "nebula", "stars", "rain"] } // Aleatorio épico en cada oleada
+];
+      
+      function deepClone(obj) {
+        try { return JSON.parse(JSON.stringify(obj)); } catch (e) { return {}; }
+      }
+      
+      function initWeatherParticles(weather) {
+        if (!weather || !weather.particles) return;
+        const p = weather.particles;
+        const count = p.count || 60;
+        switch (p.type) {
+          case "rain":
+            weather._drops = Array.from({ length: count }, () => ({
+              x: Math.random() * CANVAS_SIZE,
+              y: Math.random() * CANVAS_SIZE,
+              speed: (p.speed?.min || 6) + Math.random() * ((p.speed?.max || 12) - (p.speed?.min || 6)),
+              length: (p.length?.min || 8) + Math.random() * ((p.length?.max || 15) - (p.length?.min || 8)),
+              opacity: (p.opacity?.min || 0.1) + Math.random() * ((p.opacity?.max || 0.3) - (p.opacity?.min || 0.1))
+            }));
+            break;
+          case "snow":
+            weather._flakes = Array.from({ length: count }, () => ({
+              x: Math.random() * CANVAS_SIZE,
+              y: Math.random() * CANVAS_SIZE,
+              speed: (p.speed?.min || 0.5) + Math.random() * ((p.speed?.max || 2) - (p.speed?.min || 0.5)),
+              size: (p.size?.min || 2) + Math.random() * ((p.size?.max || 6) - (p.size?.min || 2)),
+              opacity: (p.opacity?.min || 0.3) + Math.random() * ((p.opacity?.max || 0.6) - (p.opacity?.min || 0.3)),
+              drift: (Math.random() - 0.5) * 0.5
+            }));
+            break;
+          case "stars":
+            weather._stars = Array.from({ length: count }, () => ({
+              x: Math.random() * CANVAS_SIZE,
+              y: Math.random() * CANVAS_SIZE,
+              size: (p.size?.min || 1) + Math.random() * ((p.size?.max || 2.5) - (p.size?.min || 1)),
+              twinkle: Math.random() * Math.PI * 2,
+              speed: (p.speed?.min || 0.02) + Math.random() * ((p.speed?.max || 0.08) - (p.speed?.min || 0.02))
+            }));
+            break;
+          case "fog":
+            weather._fogParticles = Array.from({ length: count }, () => ({
+              x: Math.random() * CANVAS_SIZE,
+              y: 200 + Math.random() * 200,
+              size: (p.size?.min || 40) + Math.random() * ((p.size?.max || 120) - (p.size?.min || 40)),
+              speed: (p.speed?.min || 0.3) + Math.random() * ((p.speed?.max || 0.7) - (p.speed?.min || 0.3)),
+              opacity: (p.opacity?.min || 0.03) + Math.random() * ((p.opacity?.max || 0.06) - (p.opacity?.min || 0.03))
+            }));
+            break;
+          default:
+            weather._genericParticles = Array.from({ length: count }, () => ({
+              x: Math.random() * CANVAS_SIZE,
+              y: Math.random() * CANVAS_SIZE,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: -(0.3 + Math.random() * 1.2),
+              size: 1.5 + Math.random() * 2,
+              opacity: (p.opacity?.min || 0.1) + Math.random() * ((p.opacity?.max || 0.4) - (p.opacity?.min || 0.1)),
+              life: 100 + Math.random() * 200,
+              color: p.type === "fireflies" ? "#ff4400" : "#ff88ff"
+            }));
+        }
+      }
+      
+      function updateWeatherParticles(weather, dt, fadeAlpha) {
+        if (!weather || !weather.particles) return;
+        switch (weather.particles.type) {
+          case "rain":
+            if (!weather._drops) initWeatherParticles(weather);
+            if (!weather._drops) return;
+            for (let d of weather._drops) {
+              d.y += d.speed * dt * 60;
+              d.x -= d.speed * 0.2 * dt * 60;
+              if (d.y > CANVAS_SIZE + 20) {
+                d.y = -20;
+                d.x = Math.random() * (CANVAS_SIZE + 20);
+              }
+              if (d.x < -20) d.x = CANVAS_SIZE + 20;
+              d.currentOpacity = d.opacity * fadeAlpha;
+            }
+            break;
+          case "snow":
+            if (!weather._flakes) initWeatherParticles(weather);
+            if (!weather._flakes) return;
+            for (let fl of weather._flakes) {
+              fl.y += fl.speed * dt * 60;
+              fl.x += (fl.drift + Math.sin(Date.now() * 0.001 + fl.x * 0.1) * 0.3) * dt * 60;
+              if (fl.y > CANVAS_SIZE + 10) {
+                fl.y = -10;
+                fl.x = Math.random() * CANVAS_SIZE;
+              }
+              fl.currentOpacity = fl.opacity * fadeAlpha;
+            }
+            break;
+          case "stars":
+            if (!weather._stars) initWeatherParticles(weather);
+            if (!weather._stars) return;
+            for (let st of weather._stars) {
+              st.twinkle += st.speed * dt * 60;
+              st.currentAlpha = (0.3 + Math.sin(st.twinkle) * 0.3 + 0.3) * fadeAlpha;
+            }
+            break;
+          case "fog":
+            if (!weather._fogParticles) initWeatherParticles(weather);
+            if (!weather._fogParticles) return;
+            for (let fg of weather._fogParticles) {
+              fg.x += fg.speed * dt * 60;
+              if (fg.x > CANVAS_SIZE + fg.size) fg.x = -fg.size;
+              fg.currentOpacity = fg.opacity * fadeAlpha;
+            }
+            break;
+          default:
+            if (!weather._genericParticles) initWeatherParticles(weather);
+            if (!weather._genericParticles) return;
+            for (let gp of weather._genericParticles) {
+              gp.x += gp.vx * dt * 60;
+              gp.y += gp.vy * dt * 60;
+              gp.life -= dt * 60;
+              if (gp.y < -20 || gp.life <= 0) {
+                gp.y = CANVAS_SIZE + Math.random() * 20;
+                gp.x = Math.random() * CANVAS_SIZE;
+                gp.life = 100 + Math.random() * 200;
+              }
+              gp.currentOpacity = gp.opacity * fadeAlpha * Math.min(1, gp.life / 100);
+            }
+        }
+      }
+      
+      function applyWeather(type) {
+        if (!WEATHER_TYPES[type]) type = "none";
+        if (currentWeather && currentWeather.name === WEATHER_TYPES[type].name) return;
+        previousWeather = currentWeather ? deepClone(currentWeather) : null;
+        if (previousWeather && previousWeather.particles) initWeatherParticles(previousWeather);
+        currentWeather = deepClone(WEATHER_TYPES[type]);
+        weatherTransition = 0;
+        weatherTransitionTimer = WEATHER_CONFIG.transitionDuration;
+        if (currentWeather.particles) initWeatherParticles(currentWeather);
+        // contadores
+        if (type === "rain") totalRainWaves++;
+        if (type === "eclipse") totalEclipseWaves++;
+        if (type === "thunderstorm") totalThunderstormWaves++;
+        if (type === "snow") totalSnowWaves++;
+        if (type === "fog") totalFogWaves++;
+        if (type === "nebula") totalNebulaWaves++;
+        if (type === "inferno") totalInfernoWaves++;
+        // audio ambiental
+        ['rain_loop', 'snow_wind', 'wind_loop'].forEach(n => audioManager.stopAmbient(n));
+        if (currentWeather.soundscape?.ambientLoop) {
+          audioManager.playAmbient(currentWeather.soundscape.ambientLoop, currentWeather.soundscape.ambientVolume || 0.12, 'white');
+        }
+        if (type === 'eclipse') audioManager.setFilter('lowpass', 600);
+        else audioManager.clearFilter();
+      }
+      
+      function updateWeather(dt) {
+        if (weatherTransitionTimer > 0) {
+          weatherTransition = Math.min(1, weatherTransition + (dt * 1000) / WEATHER_CONFIG.transitionDuration);
+          weatherTransitionTimer -= dt * 1000;
+        }
+        if (currentWeather) updateWeatherParticles(currentWeather, dt, weatherTransition);
+        if (previousWeather && previousWeather.particles) {
+          updateWeatherParticles(previousWeather, dt, Math.max(0, 1 - weatherTransition));
+          if (weatherTransition >= 1) previousWeather = null;
+        }
+        if (currentWeather?.soundscape?.randomSounds) {
+          for (let rs of currentWeather.soundscape.randomSounds) {
+            if (Math.random() < (rs.probability || 0) * dt * 60 && SPECIAL_SOUNDS[rs.sound]) {
+              SPECIAL_SOUNDS[rs.sound]();
+            }
+          }
+        }
+      }
+      
+      function drawWeatherParticlesOfType(weather, alpha) {
+        if (!weather || !weather.particles) return;
+        const ctx2 = ctx;
+        switch (weather.particles.type) {
+          case "rain":
+            if (!weather._drops) return;
+            ctx2.save();
+            for (let d of weather._drops) {
+              const op = (d.currentOpacity || 0) * alpha;
+              if (op <= 0) continue;
+              ctx2.strokeStyle = `rgba(100,180,255,${op})`;
+              ctx2.lineWidth = 1;
+              ctx2.beginPath();
+              ctx2.moveTo(d.x, d.y);
+              ctx2.lineTo(d.x + (d.length || 10) * 0.3, d.y + (d.length || 10));
+              ctx2.stroke();
+            }
+            ctx2.restore();
+            break;
+          case "snow":
+            if (!weather._flakes) return;
+            ctx2.save();
+            for (let fl of weather._flakes) {
+              const op = (fl.currentOpacity || 0) * alpha;
+              if (op <= 0) continue;
+              ctx2.fillStyle = `rgba(255,255,255,${op})`;
+              ctx2.beginPath();
+              ctx2.arc(fl.x, fl.y, fl.size || 3, 0, Math.PI * 2);
+              ctx2.fill();
+            }
+            ctx2.restore();
+            break;
+          case "stars":
+            if (!weather._stars) return;
+            ctx2.save();
+            for (let st of weather._stars) {
+              const op = (st.currentAlpha || 0) * alpha;
+              if (op <= 0) continue;
+              ctx2.fillStyle = `rgba(255,255,220,${op})`;
+              ctx2.beginPath();
+              ctx2.arc(st.x, st.y, st.size || 1.5, 0, Math.PI * 2);
+              ctx2.fill();
+            }
+            ctx2.restore();
+            break;
+          case "fog":
+            if (!weather._fogParticles) return;
+            ctx2.save();
+            for (let fg of weather._fogParticles) {
+              const op = (fg.currentOpacity || 0) * alpha;
+              if (op <= 0) continue;
+              const grd = ctx2.createRadialGradient(fg.x, fg.y, fg.size * 0.3, fg.x, fg.y, fg.size);
+              grd.addColorStop(0, `rgba(200,210,230,${op})`);
+              grd.addColorStop(1, 'rgba(200,210,230,0)');
+              ctx2.fillStyle = grd;
+              ctx2.fillRect(fg.x - fg.size, fg.y - fg.size, fg.size * 2, fg.size * 2);
+            }
+            ctx2.restore();
+            break;
+          default:
+            if (!weather._genericParticles) return;
+            ctx2.save();
+            for (let gp of weather._genericParticles) {
+              const op = (gp.currentOpacity || 0) * alpha;
+              if (op <= 0) continue;
+              ctx2.fillStyle = `rgba(${gp.color==="#ff4400"?"255,68,0":"255,136,255"},${op})`;
+              ctx2.beginPath();
+              ctx2.arc(gp.x, gp.y, gp.size || 2, 0, Math.PI * 2);
+              ctx2.fill();
+            }
+            ctx2.restore();
+        }
+      }
+      
+      function drawWeather() {
+        const t = weatherTransition;
+        const cw = currentWeather || WEATHER_TYPES.none;
+        const pw = previousWeather;
+        // vignette
+        if (cw.lighting?.vignette > 0) {
+          const center = CANVAS_SIZE / 2;
+          const grad = ctx.createRadialGradient(center, center, center * 0.7, center, center, center * 1.1);
+          grad.addColorStop(0, 'transparent');
+          grad.addColorStop(1, `rgba(0,0,0,${cw.lighting.vignette*t})`);
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        }
+        // luz ambiental
+        if (cw.lighting?.ambientAlpha > 0) {
+          ctx.fillStyle = cw.lighting.ambientColor || '#000000';
+          ctx.globalAlpha = (cw.lighting.ambientAlpha || 0) * t;
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+          ctx.globalAlpha = 1;
+        }
+        // flash relámpago (respeta accesibilidad)
+        if (!AccessibilityOptions.reduceFlashes && cw.lighting?.flashFrequency > 0 && Math.random() < cw.lighting.flashFrequency) {
+          ctx.fillStyle = cw.lighting.flashColor || '#ffffff';
+          ctx.globalAlpha = 0.5;
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+          ctx.globalAlpha = 1;
+        }
+        // partículas previous (fade out)
+        if (pw && pw.particles && t < 1) drawWeatherParticlesOfType(pw, Math.max(0, 1 - t));
+        // partículas current (fade in)
+        if (cw.particles) drawWeatherParticlesOfType(cw, t);
+      }
+      
+      function updateWeatherSchedule(wv) {
+        let best = null,
+          bestPriority = -1;
+        for (let rule of WEATHER_SCHEDULE) {
+          let priority = 0,
+            matched = false;
+          if (rule.wave !== undefined && rule.wave === wv) {
+            priority = 10;
+            matched = true;
+          }
+          else if (rule.from !== undefined && wv >= rule.from && wv <= rule.to) {
+            priority = 5;
+            matched = true;
+          }
+          else if (rule.every !== undefined && wv % rule.every === 0) {
+            priority = 3;
+            matched = true;
+          }
+          if (matched && priority > bestPriority) {
+            bestPriority = priority;
+            best = rule;
+          }
+        }
+        if (best) {
+          let type = best.type;
+          if (best.randomPool) type = best.randomPool[Math.floor(Math.random() * best.randomPool.length)];
+          applyWeather(type);
+          if (best.duration) {
+            timers.add(() => {
+              if (currentWeather?.name === WEATHER_TYPES[type]?.name) applyWeather(WEATHER_CONFIG.defaultWeather);
+            }, best.duration * 30000);
+          }
+        } else if (wv > 20 && Math.random() < 0.25) {
+          const pool = ["snow", "fog", "nebula", "rain", "eclipse", "inferno"];
+          applyWeather(pool[Math.floor(Math.random() * pool.length)]);
+        }
+      }
+      // ═══════════════════════════════════════
+      // TIPOS DE ENEMIGOS
+      // ═══════════════════════════════════════
+      const ENEMY_CONFIG = {
+        baseSpeedNormal: 0.058,
+        baseSpeedBoss: 0.065,
+        maxSpeedCap: 0.18,
+        defaultAlertTimeMs: 420,
+        bossAlertTimeMs: 700,
+        barraVidaMaxDist: 5
+      };
+      
+      const ENEMY_TYPES = {
+        grunt: { name: "Soldado", size: 1, speedMultiplier: 1, health: 1, color: "#ff6644", scoreValue: 10, pattern: "linear", boss: false, visualEffect: "none" },
+        runner: { name: "Corredor", size: 1, speedMultiplier: 1.6, health: 1, color: "#ffff44", scoreValue: 20, pattern: "linear", boss: false, visualEffect: "trail", abilities: ["dash"] },
+        tank: { name: "Tanque", size: 2, speedMultiplier: 0.6, health: 3, color: "#888888", scoreValue: 50, pattern: "linear", boss: false, visualEffect: "glow", immuneTo: ["freeze", "timeSlow"] },
+        ghost: { name: "Fantasma", size: 1, speedMultiplier: 1.2, health: 1, color: "#aaddff", scoreValue: 30, pattern: "homing", boss: false, visualEffect: "pulse", abilities: ["phase"] },
+        exploder: { name: "Explosivo", size: 1, speedMultiplier: 0.9, health: 1, color: "#ff4400", scoreValue: 25, pattern: "linear", boss: false, visualEffect: "blink", onDefeat: "explosion" },
+        splitter: { name: "Divisor", size: 2, speedMultiplier: 0.7, health: 2, color: "#cc00cc", scoreValue: 60, pattern: "sine", boss: false, visualEffect: "none", onDefeat: "spawnMinions", onDefeatParams: { minionType: "grunt", count: 2 } },
+        boss: {
+          name: "Jefe",
+          size: 2,
+          speedMultiplier: 1,
+          health: 4,
+          color: "#ff77ff",
+          scoreValue: 200,
+          pattern: "linear",
+          boss: true,
+          visualEffect: "boss",
+          onDefeat: "dropPowerUp",
+          onDefeatParams: { powerUpType: "magnetEpic" },
+          phases: [{ healthPercent: 1.0, pattern: "linear", speedMult: 1 }, { healthPercent: 0.5, pattern: "zigzag", speedMult: 1.3 }, { healthPercent: 0.25, pattern: "homing", speedMult: 1.6 }]
+        },
+        hunter: { name: "Cazador", size: 1, speedMultiplier: 1.1, health: 2, color: "#ff0000", scoreValue: 40, pattern: "homing", boss: false, visualEffect: "trail" },
+        staticEnemy: { name: "Estático", size: 1, speedMultiplier: 1, health: 1, color: "#00ffff", scoreValue: 15, pattern: "randomWalk", boss: false, visualEffect: "glitch" }
+      };
+      
+      class Enemy {
+        constructor(typeKey, dir) {
+          const type = ENEMY_TYPES[typeKey] || ENEMY_TYPES.grunt;
+          this.type = typeKey;
+          this.name = type.name;
+          this.dir = dir;
+          this.sizeMultiplier = type.size || 1;
+          this.health = type.health || 1;
+          this.maxHealth = type.health || 1;
+          this.color = type.color || "#ff6644";
+          this.scoreValue = type.scoreValue || 10;
+          this.pattern = type.pattern || "linear";
+          this.patternParams = type.patternParams || {};
+          this.abilities = [...(type.abilities || [])];
+          this.onDefeat = type.onDefeat || "none";
+          this.onDefeatParams = type.onDefeatParams || {};
+          this.immuneTo = [...(type.immuneTo || [])];
+          this.visualEffect = type.visualEffect || "none";
+          this.boss = type.boss || false;
+          this.phases = type.phases || null;
+          this.currentPhase = 0;
+          this.frozen = false;
+          this.slowApplied = false;
+          this.progress = 0;
+          this.offsetX = 0;
+          this.offsetY = 0;
+          this._lastRecalc = 0;
+          this._rwTimer = 0;
+          this._rwAngle = 0;
+          this._burstCooldown = 0;
+          this._dashCd = 0;
+          this.speed = (type.boss ? ENEMY_CONFIG.baseSpeedBoss : ENEMY_CONFIG.baseSpeedNormal) * (type.speedMultiplier || 1);
+          
+          const maxIndex = GRID_SIZE - (this.sizeMultiplier - 1);
+          if (dir === 'down') {
+            this.x = Math.floor(Math.random() * maxIndex);
+            this.y = -(this.sizeMultiplier - 1);
+          }
+          else if (dir === 'up') {
+            this.x = Math.floor(Math.random() * maxIndex);
+            this.y = GRID_SIZE;
+          }
+          else if (dir === 'right') {
+            this.y = Math.floor(Math.random() * maxIndex);
+            this.x = -(this.sizeMultiplier - 1);
+          }
+          else {
+            this.y = Math.floor(Math.random() * maxIndex);
+            this.x = GRID_SIZE;
+          }
+        }
+        
+        update(dt) {
+          if (this.frozen) return;
+          // fases del boss
+          if (this.phases && this.health < this.maxHealth) {
+            for (let i = this.phases.length - 1; i >= 0; i--) {
+              if (this.health / this.maxHealth <= this.phases[i].healthPercent) {
+                if (this.currentPhase !== i) {
+                  this.currentPhase = i;
+                  this.pattern = this.phases[i].pattern;
+                  this.speed = ENEMY_CONFIG.baseSpeedBoss * (ENEMY_TYPES[this.type]?.speedMultiplier || 1) * this.phases[i].speedMult;
+                }
+                break;
+              }
+            }
+          }
+          let spd = this.speed;
+          if (currentWeather?.enemyModifiers?.speedMultiplier) spd *= currentWeather.enemyModifiers.speedMultiplier;
+          if (this.slowApplied) spd *= 0.4;
+          this.progress += spd * dt * 60;
+          
+          switch (this.pattern) {
+            case "linear":
+              if (this.dir === 'down') this.y = -(this.sizeMultiplier - 1) + this.progress;
+              else if (this.dir === 'up') this.y = GRID_SIZE - this.progress;
+              else if (this.dir === 'right') this.x = -(this.sizeMultiplier - 1) + this.progress;
+              else this.x = GRID_SIZE - this.progress;
+              break;
+            case "zigzag": {
+              const amp = 2,
+                freq = 0.1;
+              const shift = Math.sin(this.progress * freq) * amp * dt * 60;
+              if (this.dir === 'down') {
+                this.y = -(this.sizeMultiplier - 1) + this.progress;
+                this.x += shift;
+              }
+              else if (this.dir === 'up') {
+                this.y = GRID_SIZE - this.progress;
+                this.x += shift;
+              }
+              else if (this.dir === 'right') {
+                this.x = -(this.sizeMultiplier - 1) + this.progress;
+                this.y += shift;
+              }
+              else {
+                this.x = GRID_SIZE - this.progress;
+                this.y += shift;
+              }
+              break;
+            }
+            case "sine": {
+              const amp = 1.5,
+                freq = 0.05;
+              this.offsetX = Math.sin(this.progress * freq) * amp;
+              if (this.dir === 'down') this.y = -(this.sizeMultiplier - 1) + this.progress;
+              else if (this.dir === 'up') this.y = GRID_SIZE - this.progress;
+              else if (this.dir === 'right') this.x = -(this.sizeMultiplier - 1) + this.progress;
+              else this.x = GRID_SIZE - this.progress;
+              break;
+            }
+            case "homing": {
+              if (Date.now() - this._lastRecalc > 300) {
+                let tx = player.x,
+                  ty = player.y;
+                if (window.decoys?.length > 0 && !this.boss) {
+                  let cd = Infinity;
+                  for (let dec of window.decoys) {
+                    const d = Math.abs(dec.x - this.x) + Math.abs(dec.y - this.y);
+                    if (d < cd) {
+                      cd = d;
+                      tx = dec.x;
+                      ty = dec.y;
+                    }
+                  }
+                }
+                const dx = tx - this.x,
+                  dy = ty - this.y,
+                  dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                this._targetX = this.x + dx / dist;
+                this._targetY = this.y + dy / dist;
+                this._lastRecalc = Date.now();
+              }
+              if (this._targetX !== undefined) {
+                const turn = 0.03;
+                this.x += (this._targetX - this.x) * turn * dt * 60;
+                this.y += (this._targetY - this.y) * turn * dt * 60;
+              }
+              break;
+            }
+            case "randomWalk": {
+              if (this._rwTimer <= 0) {
+                this._rwAngle = Math.random() * Math.PI * 2;
+                this._rwTimer = 500 + Math.random() * 500;
+              }
+              this._rwTimer -= dt * 1000;
+              this.x += Math.cos(this._rwAngle) * spd * 0.5 * dt * 60;
+              this.y += Math.sin(this._rwAngle) * spd * 0.5 * dt * 60;
+              break;
+            }
+          }
+          // habilidades
+          if (this.abilities.includes('dash')) {
+            this._dashCd -= dt * 1000;
+            if (this._dashCd <= 0) {
+              this.progress += spd * 3;
+              this._dashCd = 4000;
+            }
+          }
+        }
+        
+        getOccupiedCells() {
+          const cells = [],
+            cx = Math.round(this.x + this.offsetX),
+            cy = Math.round(this.y + this.offsetY);
+          for (let dx = 0; dx < this.sizeMultiplier; dx++)
+            for (let dy = 0; dy < this.sizeMultiplier; dy++)
+              cells.push({ x: cx + dx, y: cy + dy });
+          return cells;
+        }
+        
+        isOffScreen() {
+          const margin = (this.sizeMultiplier - 1) + 0.8;
+          if (this.dir === 'down') return this.y > GRID_SIZE + margin;
+          if (this.dir === 'up') return this.y < -margin;
+          if (this.dir === 'right') return this.x > GRID_SIZE + margin;
+          return this.x < -margin;
+        }
+        
+        draw() {
+          const offX = this.sizeMultiplier === 2 ? CELL_SIZE / 2 : 0,
+            offY = this.sizeMultiplier === 2 ? CELL_SIZE / 2 : 0;
+          const px = (this.x + this.offsetX) * CELL_SIZE + CELL_SIZE / 2 + offX;
+          const py = (this.y + this.offsetY) * CELL_SIZE + CELL_SIZE / 2 + offY;
+          const size = this.boss ? CELL_SIZE * 1.35 : CELL_SIZE * 0.6;
+          
+          ctx.save();
+          // efectos visuales
+          if (this.visualEffect === "trail") {
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(px - this.dirX() * 8, py - this.dirY() * 8, size * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+          if (this.visualEffect === "glow") {
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 12;
+          }
+          if (this.visualEffect === "pulse") { ctx.globalAlpha = Math.sin(Date.now() * 0.005) * 0.2 + 0.8; }
+          if (this.visualEffect === "blink") { ctx.globalAlpha = Math.sin(Date.now() * 0.01) > 0 ? 1 : 0.3; }
+          if (this.visualEffect === "glitch") {
+            const off = (Math.random() - 0.5) * 4;
+            ctx.translate(off, 0);
+          }
+          
+          let angle = 0;
+          if (this.dir === 'up') angle = 0;
+          if (this.dir === 'right') angle = Math.PI / 2;
+          if (this.dir === 'down') angle = Math.PI;
+          if (this.dir === 'left') angle = -Math.PI / 2;
+          
+          ctx.translate(px, py);
+          ctx.rotate(angle);
+          const tipY = -size * 0.85,
+            baseY = size * 0.5,
+            baseX = size * 0.65;
+          ctx.beginPath();
+          ctx.moveTo(0, tipY);
+          ctx.lineTo(-baseX, baseY);
+          ctx.lineTo(baseX, baseY);
+          ctx.closePath();
+          ctx.lineWidth = this.boss ? 2.5 : 2;
+          ctx.strokeStyle = this.color;
+          ctx.stroke();
+          
+          // orbitas boss
+          if (this.visualEffect === "boss") {
+            const orbitAngle = Date.now() * 0.004;
+            for (let i = 0; i < 3; i++) {
+              const a = orbitAngle + i * Math.PI * 2 / 3;
+              ctx.fillStyle = 'rgba(255,255,100,0.7)';
+              ctx.beginPath();
+              ctx.arc(Math.cos(a) * size * 1.2, Math.sin(a) * size * 1.2, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          ctx.restore();
+          
+          // barra de vida
+          if (this.maxHealth > 1) {
+            const dist = Math.abs(this.x - player.x) + Math.abs(this.y - player.y);
+            if (dist < ENEMY_CONFIG.barraVidaMaxDist) {
+              const bw = CELL_SIZE * 0.6,
+                bh = 4;
+              const bx = px - bw / 2,
+                by = py - size - 10;
+              ctx.fillStyle = '#440000';
+              ctx.fillRect(bx, by, bw, bh);
+              ctx.fillStyle = '#00ff44';
+              ctx.fillRect(bx, by, bw * (this.health / this.maxHealth), bh);
+            }
+          }
+        }
+        
+        dirX() { return this.dir === 'right' ? 1 : this.dir === 'left' ? -1 : 0; }
+        dirY() { return this.dir === 'down' ? 1 : this.dir === 'up' ? -1 : 0; }
+        
+        handleDefeat() {
+          switch (this.onDefeat) {
+            case "explosion":
+              createExplosion(this.x * CELL_SIZE, this.y * CELL_SIZE, 40, '#ff8800', 1.5);
+              // daño a enemigos cercanos
+              enemies = enemies.filter(e => {
+                if (e === this) return true;
+                const d = Math.abs(e.x - this.x) + Math.abs(e.y - this.y);
+                if (d < 2) { score += e.scoreValue; return false; }
+                return true;
+              });
+              break;
+            case "spawnMinions":
+              for (let i = 0; i < (this.onDefeatParams.count || 2); i++) {
+                const dirs = ['down', 'up', 'left', 'right'];
+                timers.add(() => { spawnEnemy(this.onDefeatParams.minionType || 'grunt', dirs[Math.floor(Math.random() * 4)]); }, i * 400);
+              }
+              break;
+            case "dropPowerUp":
+              generatePowerUpsAt(Math.round(this.x), Math.round(this.y), this.onDefeatParams.powerUpType);
+              break;
+          }
+          if (this.boss) totalBossesDefeated++;
+          score += this.scoreValue;
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('odparHighScore', highScore);
+          }
+          checkAchievements();
+        }
+      }
+      
+      function spawnEnemy(typeKey, dir) {
+        const enemy = new Enemy(typeKey, dir);
+        const type = ENEMY_TYPES[typeKey] || ENEMY_TYPES.grunt;
+        const delay = (type.boss) ? ENEMY_CONFIG.bossAlertTimeMs : ENEMY_CONFIG.defaultAlertTimeMs;
+        addWallAlert(dir, type.boss || type.size > 1, Math.floor(enemy.x), delay);
+        if (type.size > 1) addWallAlert(dir, true, Math.floor(enemy.x) + 1, delay);
+        timers.add(() => { if (!gameOver) enemies.push(enemy); }, delay);
+      }
+      
+      function triggerBossWave() {
+        if (gameOver) return;
+        lastBossTime = Date.now();
+        const dirs = ['down', 'up', 'left', 'right'];
+        dirs.forEach((d, idx) => timers.add(() => { if (!gameOver) spawnEnemy('boss', d); }, idx * 380));
+      }
+      
+      const ENEMY_SCHEDULE = [
+        { wave: 1, enemies: [{ type: "grunt", count: 4 }], spawnInterval: 1500 },
+        { wave: 5, enemies: [{ type: "grunt", count: 5 }, { type: "runner", count: 2 }], bosses: [{ type: "boss", count: 1, delay: 2000 }] },
+        { from: 10, to: 15, enemies: [{ type: "splitter", count: 2 }, { type: "tank", count: 2 }], elites: [{ type: "ghost", count: 1 }] },
+        { from: 16, to: 25, enemies: [{ type: "hunter", count: 2 }, { type: "runner", count: 3 }] },
+        { from: 26, to: 99, enemies: [{ type: "boss", count: 1 }, { type: "tank", count: 2 }] }
+      ];
+      
+      function getEnemyScheduleForWave(wv) {
+        let best = null,
+          bestPriority = -1;
+        for (let rule of ENEMY_SCHEDULE) {
+          let priority = 0,
+            matched = false;
+          if (rule.wave !== undefined && rule.wave === wv) {
+            priority = 10;
+            matched = true;
+          }
+          else if (rule.from !== undefined && wv >= rule.from && wv <= rule.to) {
+            priority = 5;
+            matched = true;
+          }
+          else if (rule.every !== undefined && rule.every > 0 && wv % rule.every === 0) {
+            priority = 3;
+            matched = true;
+          }
+          if (matched && priority > bestPriority) {
+            bestPriority = priority;
+            best = rule;
+          }
+        }
+        return best;
+      }
+      
+      const WaveStateMachine = {
+        current: 'idle',
+        schedule: null,
+        start(wv) {
+          this.schedule = getEnemyScheduleForWave(wv);
+          this.current = this.schedule ? 'SCHEDULED' : 'DYNAMIC';
+          if (this.current === 'SCHEDULED') this.executeSchedule();
+        },
+        executeSchedule() {
+          if (!this.schedule) return;
+          let delay = 0;
+          if (this.schedule.enemies) {
+            for (let entry of this.schedule.enemies) {
+              for (let i = 0; i < entry.count; i++) {
+                const dirs = ['down', 'up', 'left', 'right'],
+                  dir = dirs[Math.floor(Math.random() * 4)];
+                timers.add(() => { if (!gameOver) spawnEnemy(entry.type, dir); }, delay);
+                delay += (this.schedule.spawnInterval || 1500) / entry.count;
+              }
+            }
+          }
+          if (this.schedule.bosses) {
+            for (let entry of this.schedule.bosses) {
+              for (let i = 0; i < entry.count; i++) {
+                const dir = ['down', 'up', 'left', 'right'][i % 4];
+                timers.add(() => { if (!gameOver) spawnEnemy(entry.type, dir); }, entry.delay || 0);
+              }
+            }
+          }
+          if (this.schedule.elites) {
+            for (let entry of this.schedule.elites) {
+              for (let i = 0; i < entry.count; i++) {
+                const dir = ['down', 'up', 'left', 'right'][i % 4];
+                timers.add(() => { if (!gameOver) spawnEnemy(entry.type, dir); }, delay);
+                delay += 800;
+              }
+            }
+          }
+        }
+      };
+      
+      // ═══════════════════════════════════════
+      // ZONAS
+      // ═══════════════════════════════════════
+      const ZONE_CONFIG = {
+        safeZone: { duration: 10000, color: "#00ffcc", innerColor: "#00ffff", cooldown: 5000, maxPerWave: 1, disabledByWeather: [], pulseSpeed: 70, icon: "ZS" },
+        bonusZone: { duration: 10000, color: "#ffcc00", innerColor: "#ffaa00", pointsPerSecond: 4, maxPerWave: 3, cooldown: 5000, pulseSpeed: 60, icon: "B" },
+        doubleBonusZone: { duration: 8000, color: "#ff00ff", innerColor: "#cc00cc", pointsPerSecond: 8, maxPerWave: 3, cooldown: 5000, requireEvaded: 8, requireScore: 150, pulseSpeed: 55, icon: "2x" },
+        tripleBonusZone: { duration: 7000, color: "#FFD700", innerColor: "#00FFFF", pointsPerSecond: 12, maxPerWave: 2, cooldown: 5000, requirePremiumCollected: 3, requireBossEvaded: 2, pulseSpeed: 45, icon: "3x" },
+        speedZone: { duration: 6000, color: "#ffff44", innerColor: "#aaaa00", maxPerWave: 2, cooldown: 2000, pulseSpeed: 65, icon: ">>" },
+        shieldZone: { duration: 5000, color: "#aaddff", innerColor: "#6699cc", grantShieldOnEnter: true, maxPerWave: 2, cooldown: 5000, pulseSpeed: 70, icon: "!" },
+        comboZone: { duration: 7000, color: "#ff88ff", innerColor: "#cc44cc", comboMultiplier: 2, maxPerWave: 2, cooldown: 5000, pulseSpeed: 60, icon: "x2" },
+        freezeZone: { duration: 5000, color: "#8888ff", innerColor: "#4444aa", freezeEnemiesInRadius: 2, maxPerWave: 2, cooldown: 5000, pulseSpeed: 70, icon: "*" },
+        ghostZone: { duration: 4000, color: "#aaaaff", innerColor: "#ffffff", passthrough: true, maxPerWave: 1, cooldown: 5000, pulseSpeed: 65, icon: "~" }
+      };
+      
+      function generateZone(type) {
+        const cfg = ZONE_CONFIG[type];
+        if (!cfg) return;
+        if (zones.filter(z => z.type === type).length >= cfg.maxPerWave) return;
+        if (cfg.disabledByWeather && currentWeather && cfg.disabledByWeather.includes(currentWeather.name)) return;
+        if (type === "doubleBonusZone" && (evadedSinceLastDoubleBonus < (cfg.requireEvaded || 0) || scoreSinceLastDoubleBonus < (cfg.requireScore || 0))) return;
+        if (type === "tripleBonusZone" && (premiumCollectedSinceLastTripleBonus < (cfg.requirePremiumCollected || 0) || bossesEvadedSinceLastTripleBonus < (cfg.requireBossEvaded || 0))) return;
+        let posX, posY, attempts = 0;
+        do {
+          posX = Math.floor(Math.random() * GRID_SIZE);
+          posY = Math.floor(Math.random() * GRID_SIZE);
+          attempts++;
+        }
+        while (attempts < 15 && zones.some(z => z.x === posX && z.y === posY));
+        zones.push({ type, x: posX, y: posY, expires: Date.now() + cfg.duration, enteredTime: 0, _shieldGranted: false });
+      }
+      
+      function updateZones(dt) {
+        const now = Date.now();
+        zones = zones.filter(z => z.expires > now);
+        // Máximo total de zonas en pantalla
+if (zones.length >= 2) return;
+        for (let type in ZONE_CONFIG) {
+          if (zoneTimers[type] === undefined) zoneTimers[type] = 0;
+          zoneTimers[type] += dt * 1000;
+          if (zoneTimers[type] >= (ZONE_CONFIG[type].cooldown || 200)) {
+            if (Math.random() < 0.35) generateZone(type);
+            zoneTimers[type] = 0;
+          }
+        }
+        for (let z of zones) {
+          const inZone = (player.x === z.x && player.y === z.y);
+          // evolución bonusZone → doubleBonusZone
+          if (z.type === "bonusZone" && inZone) {
+            z.enteredTime += dt * 1000;
+            if (z.enteredTime >= 3000) {
+              z.type = "doubleBonusZone";
+              z.expires = Date.now() + ZONE_CONFIG.doubleBonusZone.duration;
+              z.enteredTime = 0;
+              createFloatingText(z.x * CELL_SIZE + CELL_SIZE / 2, z.y * CELL_SIZE + CELL_SIZE / 2 - 20, "EVOLUCION!", true);
+              playDoubleBonusCollect();
+            }
+          }
+          // freeze zone
+          if (z.type === "freezeZone") {
+            const radius = ZONE_CONFIG.freezeZone.freezeEnemiesInRadius || 2;
+            for (let enemy of enemies) {
+              enemy.frozen = (Math.abs(enemy.x - z.x) + Math.abs(enemy.y - z.y) <= radius);
+            }
+          }
+          // shield zone
+          if (z.type === "shieldZone" && inZone && !z._shieldGranted) {
+            z._shieldGranted = true;
+            activeEffects.push({ type: 'shield', expires: Date.now() + 10000 });
+            createFloatingText(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2 - 20, "ESCUDO", true);
+            playSafeZoneEnter();
+          }
+          // puntos por segundo
+          if ((z.type === "bonusZone" || z.type === "doubleBonusZone" || z.type === "tripleBonusZone") && inZone) {
+            updateZoneScore(z, dt);
+          }
+        }
+      }
+      
+      let zoneScoreAccumulator = 0;
+      
+      function updateZoneScore(z, dt) {
+        zoneScoreAccumulator += dt;
+        const cfg = ZONE_CONFIG[z.type];
+        const pps = cfg.pointsPerSecond || 0;
+        if (pps > 0 && zoneScoreAccumulator >= 1) {
+          const secs = Math.floor(zoneScoreAccumulator);
+          zoneScoreAccumulator -= secs;
+          let pts = secs * pps;
+          if (doublePointsActive) pts *= 2;
+          score += pts;
+          scoreSinceLastDoubleBonus += pts;
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('odparHighScore', highScore);
+          }
+          updateUI();
+          if (z.type === "bonusZone") playBonusCollect();
+          if (z.type === "doubleBonusZone") playDoubleBonusCollect();
+          if (z.type === "tripleBonusZone") playTripleBonusCollect();
+          createFloatingText(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2, pts, z.type === "tripleBonusZone", z.type === "tripleBonusZone");
+        }
+      }
+      
+      function drawZones() {
+        for (let z of zones) {
+          const cfg = ZONE_CONFIG[z.type];
+          if (!cfg) continue;
+          const px = z.x * CELL_SIZE + CELL_SIZE / 2,
+            py = z.y * CELL_SIZE + CELL_SIZE / 2;
+          const timeLeft = Math.max(0, z.expires - Date.now());
+          const ratio = timeLeft / cfg.duration;
+          const secs = Math.ceil(timeLeft / 1000);
+          const pulse = Math.sin(Date.now() / cfg.pulseSpeed) * 0.15 + 0.88;
+          ctx.save();
+          ctx.globalAlpha = 0.5 * ratio;
+          ctx.fillStyle = cfg.color;
+          ctx.beginPath();
+          ctx.arc(px, py, CELL_SIZE * 0.75 * pulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 0.8;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(px, py, CELL_SIZE * 0.68, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = cfg.innerColor;
+          ctx.beginPath();
+          ctx.arc(px, py, CELL_SIZE * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = '900 22px "Press Start 2P",monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#003344';
+          ctx.lineWidth = 3;
+          ctx.strokeText(secs, px, py);
+          ctx.fillText(secs, px, py);
+          if (cfg.icon) {
+            ctx.font = '700 8px "Press Start 2P",monospace';
+            ctx.fillStyle = '#ffffffcc';
+            ctx.fillText(`[${cfg.icon}]`, px, py + 14);
+          }
+          ctx.restore();
+        }
+      }
+      
+      function isInZone(type) { return zones.some(z => z.type === type && player.x === z.x && player.y === z.y); }
+      
+      function isInSafeZone() { return isInZone("safeZone"); }
+      
+      function isInGhostZone() { return isInZone("ghostZone"); }
+      
+      function isInSpeedZone() { return isInZone("speedZone"); }
+      
+      function adjustZonesToNewGrid(oldSize, newSize) {
+        const ratio = newSize / oldSize;
+        zones.forEach(z => {
+          z.x = Math.min(newSize - 1, Math.floor(z.x * ratio));
+          z.y = Math.min(newSize - 1, Math.floor(z.y * ratio));
+        });
+      }
+      // ═══════════════════════════════════════
+      // POWER-UPS
+      // ═══════════════════════════════════════
+      const RARITY_WEIGHTS = { common: 60, rare: 25, epic: 10, legendary: 5 };
+      
+      const POWERUP_CONFIG = {
+        spawnCount: 3,
+        startWave: 0,
+        lifetime: 25000,
+        types: {
+          magnetCommon: { enabled: true, cost: 50, duration: 11000, radius: 2, rarity: "common", instantActivate: true },
+          magnetEpic: { enabled: true, cost: 180, duration: 12000, radius: 5, rarity: "rare", instantActivate: true, startWave: 8 },
+          magnetLegendary: {
+            enabled: true,
+            cost: 300,
+            duration: 14000,
+            radius: 999,
+            rarity: "legendary",
+            instantActivate: true,
+            startWave: 8,
+            onActivate() {
+              const all = [...collectibles, ...messageCollectibles];
+              all.forEach(c => {
+                c.x = player.x;
+                c.y = player.y;
+              });
+              checkCollectibles();
+              createExplosion(playerDrawX, playerDrawY, 60, '#ffdd44', 2.5);
+              SPECIAL_SOUNDS.starPower();
+            }
+          },
+          shield: { enabled: true, cost: 110, duration: 9000, rarity: "common", instantActivate: true },
+          bombNormal: { enabled: true, cost: 100, duration: 0, radius: 4, rarity: "common", instantActivate: true },
+          bombLegendary: { enabled: true, cost: 200, duration: 0, radius: 999, rarity: "rare", instantActivate: true, startWave: 8 },
+          revive: { enabled: true, cost: 400, duration: 0, rarity: "rare", instantActivate: true },
+          speed: { enabled: true, cost: 150, duration: 7000, rarity: "common", startWave: 5 },
+          timeSlow: { enabled: true, cost: 200, duration: 8000, slowFactor: 0.4, rarity: "common", startWave: 6 },
+          doubleScore: { enabled: true, cost: 250, duration: 10000, multiplier: 2, rarity: "common", startWave: 8 },
+          freeze: { enabled: true, cost: 180, duration: 6000, rarity: "common", startWave: 4 },
+          clone: { enabled: true, cost: 350, duration: 9000, rarity: "rare", startWave: 10 },
+          teleporter: { enabled: true, cost: 150, duration: 0, rarity: "common", startWave: 7 },
+          starShower: { enabled: true, cost: 500, duration: 12000, rarity: "rare", startWave: 12 },
+          laser: { enabled: true, cost: 300, duration: 0, rarity: "epic", startWave: 10 },
+          decoy: { enabled: true, cost: 200, duration: 6000, rarity: "rare", startWave: 8 },
+          gridShift: { enabled: true, cost: 250, duration: 0, rarity: "epic", startWave: 12 },
+          lootBox: { enabled: true, cost: 150, duration: 0, rarity: "common", startWave: 5 },
+          berserk: { enabled: true, cost: 350, duration: 7000, rarity: "legendary", startWave: 15 },
+          phase: { enabled: true, cost: 250, duration: 4000, rarity: "rare", startWave: 10 },
+          blackHole: { enabled: true, cost: 500, duration: 5000, rarity: "legendary", startWave: 18 },
+          earthquake: { enabled: true, cost: 400, duration: 0, rarity: "epic", startWave: 14 },
+          starShowerLeg: {
+            enabled: true,
+            cost: 800,
+            duration: 15000,
+            rarity: "legendary",
+            instantActivate: true,
+            startWave: 15,
+            onActivate() {
+              for (let i = 0; i < 30; i++) collectibles.push({ x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) });
+              timers.add(() => {
+                if (!gameOver) {
+                  const b = new Enemy('boss', 'down');
+                  b.onDefeat = "none";
+                  enemies.push(b);
+                }
+              }, 1000);
+              createExplosion(CANVAS_SIZE / 2, CANVAS_SIZE / 2, 60, '#ffdd00', 3);
+              SPECIAL_SOUNDS.starPower();
+            }
+          }
+        }
+      };
+      
+      const POWERUP_TYPES = {
+        magnetCommon: { name: "IMAN", level: "COMUN", color: "#44ffcc" },
+        magnetEpic: { name: "IMAN", level: "EPICO", color: "#00ffff" },
+        magnetLegendary: { name: "IMAN", level: "LEGEND", color: "#ffdd44" },
+        shield: { name: "ESCUDO", level: "", color: "#aaddff" },
+        bombNormal: { name: "BOMBA", level: "NORMAL", color: "#ff6644" },
+        bombLegendary: { name: "BOMBA", level: "LEGEND", color: "#ff2244" },
+        revive: { name: "REVIVE", level: "", color: "#88ff88" },
+        speed: { name: "VEL", level: "", color: "#ffff44" },
+        timeSlow: { name: "TIEMPO", level: "LENTO", color: "#8888ff" },
+        doubleScore: { name: "x2", level: "PUNTOS", color: "#ffaa00" },
+        freeze: { name: "HIELO", level: "", color: "#aaddff" },
+        clone: { name: "CLON", level: "", color: "#ff88ff" },
+        teleporter: { name: "TELE", level: "", color: "#00ffff" },
+        starShower: { name: "STARS", level: "", color: "#ffdd00" },
+        laser: { name: "LASER", level: "", color: "#ff0000" },
+        decoy: { name: "SENAL", level: "", color: "#ffaa00" },
+        gridShift: { name: "GRID", level: "", color: "#00ff88" },
+        lootBox: { name: "CAJA", level: "", color: "#ffcc44" },
+        berserk: { name: "BERSERK", level: "", color: "#ff2222" },
+        phase: { name: "FASE", level: "", color: "#ccccff" },
+        blackHole: { name: "AGUJ", level: "NEG", color: "#8800ff" },
+        earthquake: { name: "TERR", level: "", color: "#886644" },
+        starShowerLeg: { name: "STARS", level: "LEG", color: "#ffdd00" }
+      };
+      
+      const POWERUP_COMBOS = {
+        "speed+magnetCommon": {
+          apply: () => {
+            messageCollectibles.filter(c => { const d = Math.abs(c.x - player.x) + Math.abs(c.y - player.y); return d <= 3; }).forEach(c => collectCell(c, true));
+            createFloatingText(playerDrawX, playerDrawY - 30, "COMBO VELOZ!", true, true);
+          }
+        },
+        "shield+speed": {
+          apply: () => {
+            activeEffects.push({ type: 'shield', expires: Date.now() + 5000 });
+            createFloatingText(playerDrawX, playerDrawY - 30, "ESCUDO PULSO!", true, true);
+          }
+        },
+        "timeSlow+freeze": {
+          apply: () => {
+            enemies.forEach(e => { e.frozen = true; });
+            timers.add(() => { enemies.forEach(e => { e.frozen = false; }); }, 3000);
+            createFloatingText(playerDrawX, playerDrawY - 30, "CONGELACION!", true, true);
+          }
+        }
+      };
+      
+      let playerInventory = [],
+        lastPowerUpTime = 0;
+      
+      function getAvailablePowerUpTypes() {
+        return Object.entries(POWERUP_CONFIG.types)
+          .filter(([k, c]) => c.enabled && (!c.startWave || wave >= c.startWave))
+          .map(([k]) => k);
+      }
+      
+      function generatePowerUps() {
+        powerUpsOnMap = [];
+        if (wave < POWERUP_CONFIG.startWave) return;
+        const candidates = getAvailablePowerUpTypes();
+        if (!candidates.length) return;
+        const weighted = [];
+        for (let key of candidates) {
+          const w = RARITY_WEIGHTS[POWERUP_CONFIG.types[key].rarity || "common"] || 60;
+          for (let j = 0; j < w; j++) weighted.push(key);
+        }
+        const toSpawn = Math.min(POWERUP_CONFIG.spawnCount, candidates.length);
+        for (let i = 0; i < toSpawn; i++) {
+          const typeKey = weighted[Math.floor(Math.random() * weighted.length)];
+          let x, y, attempts = 0;
+          do {
+            x = Math.floor(Math.random() * GRID_SIZE);
+            y = Math.floor(Math.random() * GRID_SIZE);
+            attempts++;
+          } while (attempts < 200 && (
+              (x === player.x && y === player.y) ||
+              collectibles.some(c => c.x === x && c.y === y) ||
+              messageCollectibles.some(c => c.x === x && c.y === y) ||
+              powerUpsOnMap.some(p => p.x === x && p.y === y)
+            ));
+          if (attempts < 200) powerUpsOnMap.push({ type: typeKey, x, y, expires: Date.now() + POWERUP_CONFIG.lifetime });
+        }
+      }
+      
+      function generatePowerUpsAt(x, y, typeKey) {
+        powerUpsOnMap.push({ type: typeKey, x, y, expires: Date.now() + POWERUP_CONFIG.lifetime });
+      }
+      
+      function checkPowerUpCombos(newType) {
+        const now = Date.now();
+        if (now - lastPowerUpTime < 2000) {
+          const recentType = activeEffects[activeEffects.length - 1]?.type;
+          if (recentType) {
+            const combo = POWERUP_COMBOS[`${recentType}+${newType}`] || POWERUP_COMBOS[`${newType}+${recentType}`];
+            if (combo) {
+              combo.apply();
+              premiumFlash = 30;
+            }
+          }
+        }
+        lastPowerUpTime = now;
+      }
+      
+      function applyNewPowerUpEffect(type, freeActivation = false) {
+        if (!freeActivation) checkPowerUpCombos(type);
+        switch (type) {
+          case 'timeSlow':
+            enemies.forEach(e => e.slowApplied = true);
+            timers.add(() => enemies.forEach(e => e.slowApplied = false), POWERUP_CONFIG.types.timeSlow.duration);
+            break;
+          case 'doubleScore':
+            doublePointsActive = true;
+            timers.add(() => { doublePointsActive = false; }, POWERUP_CONFIG.types.doubleScore.duration);
+            break;
+          case 'freeze':
+            enemies.forEach(e => { if (!e.immuneTo?.includes('freeze')) e.frozen = true; });
+            timers.add(() => enemies.forEach(e => { e.frozen = false; }), POWERUP_CONFIG.types.freeze.duration);
+            break;
+          case 'teleporter': {
+            const pool = messageCollectibles.length > 0 ? messageCollectibles : collectibles;
+            if (pool.length > 0) {
+              const t = pool[Math.floor(Math.random() * pool.length)];
+              player.x = t.x;
+              player.y = t.y;
+              playerDrawX = player.x * CELL_SIZE + CELL_SIZE / 2;
+              playerDrawY = player.y * CELL_SIZE + CELL_SIZE / 2;
+              createExplosion(playerDrawX, playerDrawY, 30, '#00ffff', 1.5);
+              SPECIAL_SOUNDS.teleport();
+            }
+            break;
+          }
+          case 'starShower':
+            for (let i = 0; i < 15; i++) collectibles.push({ x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) });
+            createExplosion(CANVAS_SIZE / 2, CANVAS_SIZE / 2, 40, '#ffdd00', 2);
+            SPECIAL_SOUNDS.starPower();
+            break;
+          case 'clone': {
+            const cloneInt = setInterval(() => {
+              if (gameOver || !activeEffects.some(e => e.type === 'clone')) { clearInterval(cloneInt); return; }
+              const all = [...collectibles, ...messageCollectibles];
+              if (all.length > 0) {
+                const t = all.reduce((a, b) => {
+                  const da = Math.abs(a.x - player.x) + Math.abs(a.y - player.y);
+                  const db = Math.abs(b.x - player.x) + Math.abs(b.y - player.y);
+                  return da < db ? a : b;
+                });
+                player.x = t.x;
+                player.y = t.y;
+                playerDrawX = player.x * CELL_SIZE + CELL_SIZE / 2;
+                playerDrawY = player.y * CELL_SIZE + CELL_SIZE / 2;
+                checkCollectibles();
+              }
+            }, 500);
+            timers.add(() => clearInterval(cloneInt), POWERUP_CONFIG.types.clone.duration);
+            break;
+          }
+          case 'laser': {
+            const dirMap = { up: { dx: 0, dy: -1 }, down: { dx: 0, dy: 1 }, left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } };
+            const { dx, dy } = dirMap[currentDirection || 'up'];
+            let lx = player.x,
+              ly = player.y,
+              kills = 0;
+            for (let i = 0; i < GRID_SIZE; i++) {
+              lx += dx;
+              ly += dy;
+              if (lx < 0 || lx >= GRID_SIZE || ly < 0 || ly >= GRID_SIZE) break;
+              enemies = enemies.filter(enemy => {
+                const hit = enemy.getOccupiedCells().some(c => c.x === lx && c.y === ly);
+                if (hit) {
+                  enemy.health--;
+                  if (enemy.health <= 0) {
+                    enemy.handleDefeat();
+                    createExplosion(enemy.x * CELL_SIZE + CELL_SIZE / 2, enemy.y * CELL_SIZE + CELL_SIZE / 2, 20, '#ff0000');
+                    kills++;
+                    return false;
+                  }
+                }
+                return true;
+              });
+            }
+            SPECIAL_SOUNDS.laser();
+            if (kills >= 10) {
+              if (!unlockedAchievements.laserSniper) {
+                unlockedAchievements.laserSniper = true;
+                const ach = ACHIEVEMENTS.find(a => a.id === 'laserSniper');
+                if (ach) {
+                  score += ach.reward;
+                  showAchievementPopup(ach);
+                }
+                localStorage.setItem('odparAchievements', JSON.stringify(unlockedAchievements));
+              }
+            }
+            break;
+          }
+          case 'decoy':
+            if (!window.decoys) window.decoys = [];
+            window.decoys.push({ x: player.x, y: player.y, expires: Date.now() + 6000 });
+            activeEffects.push({ type: 'decoy', expires: Date.now() + 6000 });
+            audioManager.playSfx(400, 200, 'triangle', 0.4);
+            break;
+          case 'blackHole': {
+            player.blackHoleActive = true;
+            let absorbed = 0;
+            const bhInt = setInterval(() => {
+              if (!player.blackHoleActive || gameOver) { clearInterval(bhInt); return; }
+              for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                const dx = player.x - e.x,
+                  dy = player.y - e.y,
+                  d = Math.sqrt(dx * dx + dy * dy);
+                if (d < 1.5) {
+                  e.health--;
+                  if (e.health <= 0) {
+                    e.handleDefeat();
+                    createExplosion(e.x * CELL_SIZE + CELL_SIZE / 2, e.y * CELL_SIZE + CELL_SIZE / 2, 30, '#8800ff', 1.2);
+                    enemies.splice(i, 1);
+                    absorbed++;
+                  }
+                } else {
+                  e.x += (dx / d) * 0.3;
+                  e.y += (dy / d) * 0.3;
+                }
+              }
+              if (absorbed >= 15 && !unlockedAchievements.blackHoleAch) {
+                unlockedAchievements.blackHoleAch = true;
+                const ach = ACHIEVEMENTS.find(a => a.id === 'blackHoleAch');
+                if (ach) {
+                  score += ach.reward;
+                  showAchievementPopup(ach);
+                }
+                localStorage.setItem('odparAchievements', JSON.stringify(unlockedAchievements));
+              }
+            }, 50);
+            timers.add(() => {
+              player.blackHoleActive = false;
+              clearInterval(bhInt);
+            }, 5000);
+            SPECIAL_SOUNDS.blackHole();
+            break;
+          }
+          case 'earthquake': {
+            const oldSize = GRID_SIZE;
+            GRID_SIZE = Math.max(10, GRID_SIZE - 5);
+            adjustZonesToNewGrid(oldSize, GRID_SIZE);
+            resizeGameElements();
+            createFloatingText(CANVAS_SIZE / 2, CANVAS_SIZE / 2, "TERREMOTO!", true, true);
+            SPECIAL_SOUNDS.earthquake();
+            timers.add(() => {
+              const cur = GRID_SIZE;
+              GRID_SIZE = oldSize;
+              adjustZonesToNewGrid(cur, GRID_SIZE);
+              resizeGameElements();
+            }, 3000);
+            break;
+          }
+          case 'berserk':
+            player.damageMultiplier = 2;
+            activeEffects.push({ type: 'berserk', expires: Date.now() + 7000 });
+            SPECIAL_SOUNDS.berserk();
+            break;
+          case 'phase':
+            player.phaseActive = true;
+            activeEffects.push({ type: 'phase', expires: Date.now() + 4000 });
+            SPECIAL_SOUNDS.phase();
+            break;
+          case 'gridShift':
+            messageCollectibles.forEach(c => {
+              c.x = Math.max(0, Math.min(GRID_SIZE - 1, c.x + Math.floor((Math.random() - 0.5) * 4)));
+              c.y = Math.max(0, Math.min(GRID_SIZE - 1, c.y + Math.floor((Math.random() - 0.5) * 4)));
+            });
+            createFloatingText(CANVAS_SIZE / 2, CANVAS_SIZE / 2, "REJILLA!", true);
+            break;
+          case 'lootBox': {
+            const pool = ['speed', 'magnetCommon', 'shield', 'timeSlow', 'freeze'];
+            applyNewPowerUpEffect(pool[Math.floor(Math.random() * pool.length)], true);
+            createFloatingText(playerDrawX, playerDrawY - 20, "CAJA SORPRESA!", true);
+            break;
+          }
+        }
+        if (!freeActivation) totalPowerUpsUsed++;
+      }
+      
+      function tryActivatePowerUp(pu) {
+        const cfg = POWERUP_CONFIG.types[pu.type];
+        // Legendarios con onActivate especial
+        if (cfg?.onActivate) {
+          cfg.onActivate();
+          powerUpsOnMap = powerUpsOnMap.filter(p => p !== pu);
+          return true;
+        }
+        const cost = cfg?.cost || 0;
+        const info = POWERUP_TYPES[pu.type] || { name: pu.type, level: "", color: "#ffffff" };
+        if (score < cost) {
+          createFloatingText(playerDrawX, playerDrawY - 25, "SIN PUNTOS", false);
+          playSound(320, 100, 'square', 0.6);
+          return false;
+        }
+        // ya activo
+        if (pu.type === 'shield' && activeEffects.some(e => e.type === 'shield')) { createFloatingText(playerDrawX, playerDrawY - 25, "YA ACTIVO", true); return false; }
+        if (pu.type.startsWith('magnet')) {
+          const eIdx = activeEffects.findIndex(e => e.type.startsWith('magnet'));
+          if (eIdx !== -1) {
+            const existingR = POWERUP_CONFIG.types[activeEffects[eIdx].type]?.radius || 0;
+            if ((cfg.radius || 0) > existingR) activeEffects.splice(eIdx, 1);
+            else { createFloatingText(playerDrawX, playerDrawY - 25, "IMAN ACTIVO", true); return false; }
+          }
+        }
+        if (pu.type === 'revive' && hasReviveTotem) { createFloatingText(playerDrawX, playerDrawY - 25, "YA TIENES REVIVE", true); return false; }
+        score -= cost;
+        updateUI();
+        const px = pu.x * CELL_SIZE + CELL_SIZE / 2,
+          py = pu.y * CELL_SIZE + CELL_SIZE / 2;
+        floatingTexts.push(new FloatingText(px, py - 15, `-${cost}`, '#ff4444', false, false, false));
+        const instantTypes = ['timeSlow', 'doubleScore', 'freeze', 'clone', 'teleporter', 'starShower', 'laser', 'decoy', 'blackHole', 'earthquake', 'berserk', 'phase', 'gridShift', 'lootBox', 'starShowerLeg'];
+        if (instantTypes.includes(pu.type)) {
+          createFloatingText(px, py, info.name + (info.level ? ' ' + info.level : ''), true);
+          applyNewPowerUpEffect(pu.type);
+          powerUpsOnMap = powerUpsOnMap.filter(p => p !== pu);
+          SPECIAL_SOUNDS.powerUpActivate();
+          return true;
+        }
+        if (pu.type === 'revive') {
+          hasReviveTotem = true;
+          createFloatingText(px, py, "REVIVE LISTO", true);
+          playSound(1350, 90, 'sine', 0.7);
+        }
+        else if (pu.type.includes('bomb')) {
+          const isLeg = pu.type === 'bombLegendary';
+          for (let i = enemies.length - 1; i >= 0; i--) {
+            if (isLeg || Math.random() < 0.8) {
+              createExplosion(enemies[i].x * CELL_SIZE + CELL_SIZE / 2, enemies[i].y * CELL_SIZE + CELL_SIZE / 2, isLeg ? 25 : 20, '#ff4444');
+              enemies.splice(i, 1);
+            }
+          }
+          createExplosion(px, py, isLeg ? 55 : 40, '#ff6644', 1.8);
+          createFloatingText(px, py, info.name + (info.level ? ' ' + info.level : ''), true, true);
+          playSound(180, 350, 'sawtooth', 0.85);
+        } else {
+          activeEffects.push({ type: pu.type, expires: Date.now() + (cfg.duration || 0), radius: cfg.radius || 0 });
+          createFloatingText(px, py, info.name + (info.level ? ' ' + info.level : ''), true);
+        }
+        powerUpsOnMap = powerUpsOnMap.filter(p => p !== pu);
+        return true;
+      }
+      
+      function tryStoreOrActivatePowerUp(pu) {
+        if (playerInventory.length < 2) {
+          playerInventory.push(pu);
+          powerUpsOnMap = powerUpsOnMap.filter(p => p !== pu);
+          createFloatingText(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2 - 20, "GUARDADO", true);
+        } else {
+          const oldPu = playerInventory.shift();
+          activateInventoryPowerUp(oldPu);
+          playerInventory.push(pu);
+          powerUpsOnMap = powerUpsOnMap.filter(p => p !== pu);
+        }
+      }
+      
+      function activateInventoryPowerUp(pu) {
+        const info = POWERUP_TYPES[pu.type] || { name: pu.type, level: "", color: "#ffffff" };
+        createFloatingText(playerDrawX, playerDrawY, info.name, true);
+        applyNewPowerUpEffect(pu.type, true);
+        SPECIAL_SOUNDS.powerUpActivate();
+        totalPowerUpsUsed++;
+      }
+      
+      function drawPowerUpsOnMap() {
+        const now = Date.now();
+        for (let pu of powerUpsOnMap) {
+          if (now > pu.expires) continue;
+          const px = pu.x * CELL_SIZE + CELL_SIZE / 2,
+            py = pu.y * CELL_SIZE + CELL_SIZE / 2;
+          const pulse = Math.sin(now / 110) * 0.07 + 1.0;
+          const info = POWERUP_TYPES[pu.type] || { name: pu.type, level: "", color: "#ffffff" };
+          const s = CELL_SIZE * 0.42 * pulse;
+          ctx.save();
+          ctx.strokeStyle = info.color;
+          ctx.lineWidth = 2.0;
+          if (pu.type.startsWith('magnet')) {
+            ctx.beginPath();
+            ctx.moveTo(px, py - s);
+            ctx.lineTo(px - s * 0.75, py + s * 0.65);
+            ctx.lineTo(px + s * 0.75, py + s * 0.65);
+            ctx.closePath();
+            ctx.stroke();
+          } else if (pu.type === 'shield') {
+            ctx.beginPath();
+            ctx.arc(px, py, s * 1.15, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(px, py, s * 0.7, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (pu.type.includes('bomb')) {
+            ctx.beginPath();
+            ctx.arc(px, py, s, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (pu.type === 'revive') {
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.moveTo(px - s * 0.8, py - s);
+            ctx.lineTo(px + s * 0.8, py - s);
+            ctx.moveTo(px, py - s * 1.1);
+            ctx.lineTo(px, py + s * 1.1);
+            ctx.stroke();
+          } else if (pu.type === 'doubleScore' || pu.type === 'berserk') {
+            ctx.fillStyle = info.color;
+            ctx.font = `900 ${Math.floor(CELL_SIZE*0.4)}px "Press Start 2P",monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('x2', px, py + 4);
+          } else if (pu.type === 'blackHole') {
+            ctx.beginPath();
+            ctx.arc(px, py, s, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = info.color + '44';
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(px, py, s, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          const cost = POWERUP_CONFIG.types[pu.type]?.cost || 0;
+          ctx.font = '900 12px "Press Start 2P",monospace';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(cost, px, py + s * 1.2 + 2);
+          ctx.restore();
+        }
+      }
+      
+      function drawInventoryHUD() {
+        if (playerInventory.length === 0) return;
+        const startX = CANVAS_SIZE - 74,
+          startY = 10;
+        ctx.save();
+        for (let i = 0; i < playerInventory.length; i++) {
+          const slot = playerInventory[i];
+          const info = POWERUP_TYPES[slot.type] || { name: slot.type, level: "", color: "#ffffff" };
+          ctx.fillStyle = '#333366';
+          ctx.strokeStyle = info.color || '#ffffff44';
+          ctx.lineWidth = 1.5;
+          ctx.fillRect(startX + i * 36, startY, 32, 32);
+          ctx.strokeRect(startX + i * 36, startY, 32, 32);
+          ctx.fillStyle = info.color || '#ffffff';
+          ctx.font = '7px "Press Start 2P",monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText((info.name || slot.type).slice(0, 4).toUpperCase(), startX + i * 36 + 16, startY + 16);
+        }
+        ctx.restore();
+      }
+      // ═══════════════════════════════════════
+      // SISTEMA DE MENSAJES
+      // ═══════════════════════════════════════
+      const EFFECT_PRESETS = {
+        none: {},
+        pulse: { pulseSpeed: 0.3, pulseAmplitude: 0.15 },
+        glow: { glowRadius: 1.4, glowColor: "#ffffff" },
+        blink: { blinkSpeed: 0.2, blinkMinAlpha: 0.3 },
+        boss: { pulseSpeed: 0.5, pulseAmplitude: 0.25, glowRadius: 2.0, glowColor: "#ff44ff" },
+        chaos: { chaosOffsetMax: 3 },
+        stealth: { stealthAlphaMin: 0.1, stealthSpeed: 0.4 },
+        rotate: { rotateSpeed: 0.02, rotateAmplitude: 0.15 }
+      };
+      
+      const MESSAGE_CONFIG = {
+        mode: "scheduled",
+        MESSAGE_SCHEDULE: [
+        {
+          wave: 2,
+          text: "A",
+          fillColor: "blue",
+          palette: "ice",
+          strokeColor: { mode: "fixed", value: "red", width: 1 },
+          effects: "pulse+chaos",
+          effectParams: { pulseSpeed: 0.5, pulseAmplitude: 0.5, glowRadius: 9, glowColor: "#0000ff" },
+          pointsPerCell: "combo",
+          basePoints: 1,
+          comboMultiplier: 0.05,
+          completionBonus: "perfect",
+          completionBonusPoints: 500,
+          mapSizeMode: "expand",
+          enemySpeedMultiplier: 0.80,
+          bossRush: true,
+          glitchIntensity: 100,
+          playerGlowOnStart: 80,
+          specialSound: "speedBoost"
+        },
+        {
+          wave: 3,
+          text: "A",
+          fillColor: "rainbow",
+          rainbowSpeed: 0.5,
+          strokeColor: { mode: "fixed", value: "#000", width: 1.5 },
+          effects: "pulse",
+          pointsPerCell: "increasing",
+          basePoints: 12,
+          completionBonus: "scale",
+          completionBonusPoints: 300,
+          mapSizeMode: "fittext",
+          glitchIntensity: 0.5
+        },
+        {
+          wave: 7,
+          text: "MI",
+          fillColor: "palette",
+          palette: "ice",
+          strokeColor: { mode: "fixed", value: "#003", width: 1.5 },
+          effects: "glow",
+          effectParams: { glowRadius: 1.6, glowColor: "#00ffff" },
+          pointsPerCell: "multiplier",
+          basePoints: 15,
+          multiplier: 1.8,
+          completionBonus: "speed",
+          completionSpeedFactor: 0.5,
+          mapSizeMode: "fittext",
+          enemySpeedMultiplier: 1.1,
+          specialSound: "speedBoost"
+        },
+        {
+          wave: 10,
+          text: "AMOR",
+          fillColor: "palette",
+          palette: "neon",
+          strokeColor: { mode: "fixed", value: "#000", width: 2 },
+          effects: "chaos",
+          effectParams: { chaosOffsetMax: 2 },
+          pointsPerCell: "random",
+          basePoints: 18,
+          pointsRandomMin: 10,
+          pointsRandomMax: 30,
+          completionBonus: "overkill",
+          overkillThreshold: 5,
+          mapSizeMode: "fittext",
+          doublePoints: true,
+          glitchIntensity: 0.6
+        },
+        {
+          wave: 15,
+          text: "TE AMO",
+          fillColor: "palette",
+          palette: "gold",
+          strokeColor: { mode: "fixed", value: "#440", width: 2.5 },
+          effects: "boss+glow",
+          pointsPerCell: "lastStand",
+          basePoints: 25,
+          lastStandThreshold: 4,
+          lastStandMultiplier: 6,
+          completionBonus: "perfect",
+          completionBonusPoints: 800,
+          mapSizeMode: "expand",
+          bossRush: true,
+          doublePoints: true,
+          glitchIntensity: 1.0,
+          playerGlowOnStart: 120,
+          specialSound: "bossWarning"
+        },
+        {
+          from: 20,
+          to: 99,
+          text: "TE AMO, TE AMO, TE AMO, TE AMO",
+          fillColor: "palette",
+          palette: "plasma",
+          strokeColor: { mode: "fixed", value: "#000", width: 2 },
+          effects: "boss+chaos",
+          pointsPerCell: "combo",
+          basePoints: 30,
+          comboMultiplier: 0.2,
+          completionBonus: "overkill",
+          mapSizeMode: "fittext",
+          enemySpeedMultiplier: 1.3,
+          bossRush: true,
+          doublePoints: true,
+          glitchIntensity: 1.0
+        }, ],
+        fallback: "none",
+        fallbackPool: ["OLEADA", "SCORE", "SPEED", ""],
+        _fallbackIndex: 0,
+        autoGrid: true,
+        gridMin: 15,
+        gridMax: 60,
+        defaultFillColor: "#ff88ff",
+        defaultStrokeColor: { mode: "fixed", value: "#000", width: 1.5 },
+        bonusOnCompleteEnabled: true,
+        bonusOnComplete: 200,
+      };
+      
+      let currentMultiMessageIndex = 0;
+      
+      function buildDefaultConfig() {
+        return {
+          text: "",
+          fillColor: MESSAGE_CONFIG.defaultFillColor,
+          strokeColor: MESSAGE_CONFIG.defaultStrokeColor,
+          effects: "none",
+          effectParams: {},
+          pointsPerCell: 15,
+          basePoints: 15,
+          comboMultiplier: 0.1,
+          multiplier: 2.0,
+          edgeMultiplier: 2.5,
+          centerMultiplier: 2.0,
+          lastStandMultiplier: 5.0,
+          lastStandThreshold: 3,
+          pointsRandomMin: 5,
+          pointsRandomMax: 25,
+          completionBonus: MESSAGE_CONFIG.bonusOnComplete,
+          completionBonusPoints: MESSAGE_CONFIG.bonusOnComplete,
+          completionSpeedFactor: 0.5,
+          overkillThreshold: 5,
+          mapSizeMode: "fittext",
+          enemySpeedMultiplier: 1,
+          spawnRateMultiplier: 1,
+          safeZoneDisabled: false,
+          bossRush: false,
+          doublePoints: false,
+          invulnerableOnWaveStart: 0,
+          glitchIntensity: 1,
+          playerGlowOnStart: 50,
+          specialSound: null,
+          bonusOnCompleteEnabled: MESSAGE_CONFIG.bonusOnCompleteEnabled,
+          _seed: Math.floor(Math.random() * 360)
+        };
+      }
+      
+      function getMessageConfig(wv) {
+        const def = buildDefaultConfig();
+        let best = null,
+          bestPriority = -1;
+        for (let rule of MESSAGE_CONFIG.MESSAGE_SCHEDULE) {
+          let priority = 0,
+            matched = false;
+          if (rule.wave !== undefined && rule.wave === wv) {
+            priority = 10;
+            matched = true;
+          }
+          else if (rule.from !== undefined && rule.to !== undefined && wv >= rule.from && wv <= rule.to) {
+            priority = 5;
+            matched = true;
+          }
+          else if (rule.every !== undefined && rule.every > 0 && wv % rule.every === 0) {
+            priority = 3;
+            matched = true;
+          }
+          if (matched && priority > bestPriority) {
+            bestPriority = priority;
+            best = rule;
+          }
+        }
+        if (best) {
+          const merged = { ...def, ...best };
+          if (typeof merged.text === 'function') merged.text = merged.text();
+          else if (typeof merged.text === 'string')
+            merged.text = merged.text.replace('{score}', score).replace('{wave}', wave).replace('{highScore}', highScore);
+          return merged;
+        }
+        if (MESSAGE_CONFIG.fallback === "sequential") {
+          const txt = MESSAGE_CONFIG.fallbackPool[MESSAGE_CONFIG._fallbackIndex % MESSAGE_CONFIG.fallbackPool.length];
+          MESSAGE_CONFIG._fallbackIndex++;
+          return { ...def, text: txt };
+        }
+        return { ...def, text: "" };
+      }
+      
+      // ═══════════════════════════════════════
+      // GRID & TEXTO PIXEL
+      // ═══════════════════════════════════════
+      function getFontInfoForGrid(size) {
+        if (size >= 15) return { font: FONT_5, w: 3, h: 5, gap: 2 };
+        return { font: FONT_3, w: 3, h: 3, gap: 1 };
+      }
+      
+      function wordPixelWidthFI(word, fi) { let w = 0; for (let ch of word.toUpperCase()) w += fi.w + fi.gap; return Math.max(0, w - fi.gap); }
+      
+      function wrapTextFI(text, maxWidth, fi) {
+        const words = text.split(' '),
+          lines = [];
+        let cur = '';
+        for (let word of words) {
+          const test = cur ? cur + ' ' + word : word;
+          if (wordPixelWidthFI(test, fi) <= maxWidth) cur = test;
+          else {
+            if (cur) {
+              lines.push(cur);
+              cur = '';
+            }
+            if (wordPixelWidthFI(word, fi) > maxWidth) {
+              let chunk = '';
+              for (let ch of word) {
+                if (wordPixelWidthFI(chunk + ch, fi) <= maxWidth) chunk += ch;
+                else {
+                  lines.push(chunk);
+                  chunk = ch;
+                }
+              }
+              if (chunk) lines.push(chunk);
+            } else cur = word;
+          }
+        }
+        if (cur) lines.push(cur);
+        return lines;
+      }
+      
+      function calculateGridSizeForMessage(text, mode) {
+        const min = MESSAGE_CONFIG.gridMin,
+          max = MESSAGE_CONFIG.gridMax;
+        if (!text) return min;
+        let fi = getFontInfoForGrid(min);
+        const words = text.split(' ');
+        let maxWordW = 0;
+        for (let w of words) maxWordW = Math.max(maxWordW, wordPixelWidthFI(w, fi));
+        let neededW = maxWordW + 4;
+        if (neededW > min) {
+          fi = getFontInfoForGrid(neededW);
+          maxWordW = 0;
+          for (let w of words) maxWordW = Math.max(maxWordW, wordPixelWidthFI(w, fi));
+          neededW = maxWordW + 4;
+        }
+        const lines = wrapTextFI(text, neededW - 2, fi);
+        const blockH = lines.length * (fi.h + 1) - 1,
+          neededH = blockH + 4;
+        let baseSize = Math.max(neededW, neededH);
+        switch (mode) {
+          case "expand":
+            baseSize = Math.ceil(baseSize * 1.2);
+            break;
+          case "compact":
+            baseSize = Math.max(min, baseSize - 2);
+            break;
+          case "random":
+            baseSize = min + Math.floor(Math.random() * (max - min + 1));
+            break;
+        }
+        return Math.max(min, Math.min(max, baseSize));
+      }
+      
+      function interpolateColor(c1, c2, t) {
+        const r1 = parseInt(c1.slice(1, 3), 16),
+          g1 = parseInt(c1.slice(3, 5), 16),
+          b1 = parseInt(c1.slice(5, 7), 16);
+        const r2 = parseInt(c2.slice(1, 3), 16),
+          g2 = parseInt(c2.slice(3, 5), 16),
+          b2 = parseInt(c2.slice(5, 7), 16);
+        const r = Math.round(r1 + (r2 - r1) * t),
+          g = Math.round(g1 + (g2 - g1) * t),
+          b = Math.round(b1 + (b2 - b1) * t);
+        return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+      }
+      
+      function resolveCellColor(config, x, y, index, gridSize) {
+        const mode = config.fillColor || "default";
+        switch (mode) {
+          case "random":
+            return `hsl(${((config._seed||0)+index*37)%360},80%,60%)`;
+          case "palette": { const pal = PALETTES[config.palette] || ["#ffffff"]; return pal[index % pal.length]; }
+          case "rainbow": { const h = (Date.now() * (config.rainbowSpeed || 0.5) / 10 + index * 5) % 360; return `hsl(${h},90%,55%)`; }
+          case "gradientH":
+            return interpolateColor(config.gradientStart || "#ffffff", config.gradientEnd || "#000000", x / (gridSize - 1 || 1));
+          case "gradientV":
+            return interpolateColor(config.gradientStart || "#ffffff", config.gradientEnd || "#000000", y / (gridSize - 1 || 1));
+          default:
+            return config.fillColor || MESSAGE_CONFIG.defaultFillColor;
+        }
+      }
+      
+      function parseEffectsString(str) {
+        if (!str) return {};
+        let combined = {};
+        for (let name of str.split('+')) { combined = { ...combined, ...(EFFECT_PRESETS[name] || {}) }; }
+        return combined;
+      }
+      
+      function messageToCoordsAdvanced(message, config, gridSize) {
+        const fi = getFontInfoForGrid(gridSize);
+        if (!fi) return [];
+        const { font, w, h, gap } = fi;
+        const maxWidth = gridSize - 2;
+        const lines = wrapTextFI(message, maxWidth, fi);
+        const blockH = lines.length * (h + 1) - 1;
+        const startY = Math.max(1, Math.floor((gridSize - blockH) / 2));
+        const coords = [];
+        let lineY = startY;
+        for (let line of lines) {
+          const lineW = wordPixelWidthFI(line, fi);
+          let cx = 1 + Math.floor((maxWidth - lineW) / 2);
+          for (let ch of line.toUpperCase()) {
+            const matrix = font[ch] || font[' '];
+            for (let row = 0; row < matrix.length; row++) {
+              for (let col = 0; col < (Array.isArray(matrix[row]) ? matrix[row].length : 1); col++) {
+                const bit = Array.isArray(matrix[row]) ? matrix[row][col] : matrix[row];
+                if (bit === 1) {
+                  const px = cx + col,
+                    py = lineY + row;
+                  if (px >= 0 && px < gridSize && py >= 0 && py < gridSize) {
+                    const index = coords.length;
+                    const color = resolveCellColor(config, px, py, index, gridSize);
+                    coords.push({
+                      x: px,
+                      y: py,
+                      color,
+                      fillColor: config.fillColor,
+                      palette: config.palette,
+                      rainbowSpeed: config.rainbowSpeed,
+                      strokeColor: config.strokeColor || MESSAGE_CONFIG.defaultStrokeColor,
+                      effects: config.effects || "none",
+                      effectParams: { ...(config.effectParams || {}) },
+                      basePoints: config.basePoints || 15,
+                      entranceStyle: config.cellEntrance?.style || "none",
+                      entranceDelay: Date.now() + index * (config.cellEntrance?.delay || 0)
+                    });
+                  }
+                }
+              }
+            }
+            cx += w + gap;
+          }
+          lineY += h + 1;
+        }
+        return coords;
+      }
+      
+      function calculatePointsPerCell(config, comboCount, totalCells, collectedCount, gridPos, gridSize) {
+        const bp = config.basePoints || 15;
+        const mode = config.pointsPerCell;
+        if (typeof mode === 'number') return mode;
+        switch (mode) {
+          case "random":
+            return Math.floor(Math.random() * ((config.pointsRandomMax || 25) - (config.pointsRandomMin || 5) + 1)) + (config.pointsRandomMin || 5);
+          case "increasing":
+            return bp + collectedCount * 2;
+          case "decreasing":
+            return bp + (totalCells - collectedCount) * 0.5;
+          case "combo":
+            return Math.floor(bp * (1 + comboCount * (config.comboMultiplier || 0.1)));
+          case "multiplier":
+            return Math.floor(bp * (config.multiplier || 2));
+          case "edge":
+            if (gridPos.x === 0 || gridPos.x === gridSize - 1 || gridPos.y === 0 || gridPos.y === gridSize - 1) return Math.floor(bp * (config.edgeMultiplier || 2.5));
+            return bp;
+          case "center": {
+            const cx = Math.floor(gridSize / 2),
+              cy = Math.floor(gridSize / 2);
+            if (Math.abs(gridPos.x - cx) <= 1 && Math.abs(gridPos.y - cy) <= 1) return Math.floor(bp * (config.centerMultiplier || 2));
+            return bp;
+          }
+          case "lastStand":
+            if (totalCells - collectedCount <= (config.lastStandThreshold || 3)) return Math.floor(bp * (config.lastStandMultiplier || 5));
+            return bp;
+          default:
+            return bp;
+        }
+      }
+      
+      function calculateCompletionBonus(config, totalCells, comboCount, elapsed) {
+        const mode = config.completionBonus;
+        const base = config.completionBonusPoints || 200;
+        if (!mode || mode === 0) return 0;
+        if (typeof mode === 'number') return mode;
+        switch (mode) {
+          case "perfect":
+            return base;
+          case "scale":
+            return Math.floor(base * (config.completionBonusMultiplier || 1.5));
+          case "speed": { const f = config.completionSpeedFactor || 0.5; const tb = Math.max(0, base - Math.floor(elapsed / 1000) * 5); return tb + Math.floor(base * f); }
+          case "overkill":
+            if (comboCount >= (config.overkillThreshold || 5)) return base * 3;
+            return base;
+          default:
+            return base;
+        }
+      }
+      
+      // ═══════════════════════════════════════
+      // LOGROS
+      // ═══════════════════════════════════════
+      const ACHIEVEMENTS = [
+        { id: "firstBlood", name: "Primer Contacto", desc: "Completa tu primer mensaje", icon: "[*]", reward: 500, condition: () => totalWavesCompleted >= 1, progress: () => Math.min(1, totalWavesCompleted) },
+        { id: "centurion", name: "Centurion", desc: "Alcanza 100 puntos", icon: "[100]", reward: 1000, condition: () => score >= 100, progress: () => Math.min(1, score / 100) },
+        { id: "untouchable", name: "Intocable", desc: "Esquiva 50 enemigos en una oleada", icon: "[~]", reward: 2000, condition: () => evadedThisWave >= 50, progress: () => Math.min(1, evadedThisWave / 50) },
+        { id: "collector", name: "Coleccionista", desc: "Recolecta 1000 celdas de mensaje", icon: "[+]", reward: 3000, condition: () => totalCellsCollected >= 1000, progress: () => Math.min(1, totalCellsCollected / 1000) },
+        { id: "bossHunter", name: "Cazador de Jefes", desc: "Derrota 10 jefes", icon: "[B]", reward: 5000, condition: () => totalBossesDefeated >= 10, progress: () => Math.min(1, totalBossesDefeated / 10) },
+        { id: "speedDemon", name: "Demonio Veloz", desc: "Completa una oleada en < 20s", icon: "[>>]", reward: 4000, condition: () => lastWaveCompletionTime < 20000 && wave > 1, progress: () => lastWaveCompletionTime < 20000 ? 1 : 0 },
+        { id: "rich", name: "Adinerado", desc: "Acumula 10000 puntos", icon: "[$]", reward: 10000, condition: () => score >= 10000, progress: () => Math.min(1, score / 10000) },
+        { id: "immortal", name: "Inmortal", desc: "Usa 5 revives en una partida", icon: "[R]", reward: 8000, condition: () => revivesUsedThisGame >= 5, progress: () => Math.min(1, revivesUsedThisGame / 5) },
+        { id: "stormChaser", name: "Cazatormentas", desc: "Sobrevive a 5 tormentas", icon: "[!]", reward: 3000, condition: () => totalThunderstormWaves >= 5, progress: () => Math.min(1, totalThunderstormWaves / 5) },
+        { id: "snowAngel", name: "Angel de Nieve", desc: "5 oleadas con nieve", icon: "[*]", reward: 2500, condition: () => totalSnowWaves >= 5, progress: () => Math.min(1, totalSnowWaves / 5) },
+        { id: "weatherMaster", name: "Maestro del Clima", desc: "Sobrevive a todos los climas", icon: "[W]", reward: 6000, condition: () => totalRainWaves > 0 && totalSnowWaves > 0 && totalFogWaves > 0 && totalThunderstormWaves > 0 && totalEclipseWaves > 0 && totalNebulaWaves > 0 && totalInfernoWaves > 0, progress: () => [totalRainWaves, totalSnowWaves, totalFogWaves, totalThunderstormWaves, totalEclipseWaves, totalNebulaWaves, totalInfernoWaves].filter(v => v > 0).length / 7 },
+        { id: "infernoSurv", name: "Superviviente", desc: "Sobrevive una oleada infernal", icon: "[F]", reward: 4000, condition: () => totalInfernoWaves > 0, progress: () => totalInfernoWaves > 0 ? 1 : 0 },
+        { id: "comboKing", name: "Rey del Combo", desc: "Alcanza combo de 50", icon: "[x]", reward: 5000, condition: () => maxCombo >= 50, progress: () => Math.min(1, maxCombo / 50) },
+        { id: "powerCollector", name: "Arsenal", desc: "Usa 20 power-ups en una partida", icon: "[P]", reward: 3500, condition: () => totalPowerUpsUsed >= 20, progress: () => Math.min(1, totalPowerUpsUsed / 20) },
+        { id: "evasionMaster", name: "Maestro Evasion", desc: "Esquiva 500 enemigos en total", icon: "[>]", reward: 6000, condition: () => totalEnemiesEvaded >= 500, progress: () => Math.min(1, totalEnemiesEvaded / 500) },
+        { id: "waveWarrior", name: "Guerrero", desc: "Completa 30 oleadas", icon: "[W]", reward: 7000, condition: () => totalWavesCompleted >= 30, progress: () => Math.min(1, totalWavesCompleted / 30) },
+        { id: "marathon", name: "Maratoniano", desc: "Alcanza la oleada 50", icon: "[50]", reward: 15000, condition: () => wave >= 50, progress: () => Math.min(1, wave / 50) },
+        { id: "richAndFamous", name: "Rico y Famoso", desc: "Acumula 50000 puntos", icon: "[$$$]", reward: 20000, condition: () => score >= 50000, progress: () => Math.min(1, score / 50000) },
+        { id: "bossSlayer", name: "Matajefes", desc: "Derrota 20 jefes", icon: "[B!]", reward: 10000, condition: () => totalBossesDefeated >= 20, progress: () => Math.min(1, totalBossesDefeated / 20) },
+        { id: "zombie", name: "Zombie", desc: "Usa 3 revives en una partida", icon: "[z]", reward: 5000, condition: () => totalRevivesUsed >= 3, progress: () => Math.min(1, totalRevivesUsed / 3) },
+        { id: "laserSniper", name: "Francotirador", desc: "Elimina 10 enemigos con laser", icon: "[L]", reward: 6000, condition: () => false, progress: () => 0, hidden: true },
+        { id: "blackHoleAch", name: "Agujero Negro", desc: "Absorbe 15 enemigos", icon: "[O]", reward: 7000, condition: () => false, progress: () => 0, hidden: true },
+        { id: "untouchableWave", name: "Oleada Perfecta", desc: "Completa una oleada sin daño", icon: "[0]", reward: 5000, condition: () => evadedThisWave > 0 && totalShieldsBroken === 0 && totalRevivesUsed === 0, progress: () => 0 },
+        { id: "earlyBird", name: "Madrugador", desc: "Primer mensaje en < 15s", icon: "[t]", reward: 2000, condition: () => lastWaveCompletionTime < 15000 && wave === 1, progress: () => 0, hidden: true },
+        { id: "richPlayer", name: "Jugador Rico", desc: "Score > 100000", icon: "[1M]", reward: 50000, condition: () => score >= 100000, progress: () => Math.min(1, score / 100000) },
+      ];
+      
+      let unlockedAchievements = JSON.parse(localStorage.getItem('odparAchievements') || '{}');
+      
+      function checkAchievements() {
+        const newUnlocks = [];
+        for (let ach of ACHIEVEMENTS) {
+          if (!unlockedAchievements[ach.id]) {
+            try {
+              if (ach.condition()) {
+                unlockedAchievements[ach.id] = true;
+                newUnlocks.push(ach);
+                score += ach.reward;
+                if (score > highScore) {
+                  highScore = score;
+                  localStorage.setItem('odparHighScore', highScore);
+                }
+              }
+            }
+            catch (e) {}
+          }
+        }
+        if (newUnlocks.length > 0) {
+          localStorage.setItem('odparAchievements', JSON.stringify(unlockedAchievements));
+          for (let ach of newUnlocks) showAchievementPopup(ach);
+        }
+      }
+      
+      function showAchievementPopup(ach) {
+        floatingTexts.push(new FloatingText(CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 60, `${ach.icon} ${ach.name}`, '#ffd700', true, true, false));
+        if (SPECIAL_SOUNDS.levelUp) SPECIAL_SOUNDS.levelUp();
+      }
+      // ═══════════════════════════════════════
+      // VARIABLES GLOBALES DEL ENGINE
+      // ═══════════════════════════════════════
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d', { alpha: false });
+      
+      let GRID_SIZE = INITIAL_GRID_SIZE;
+      let CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
+      
+      let currentWaveConfig = null;
+      let currentWaveMessage = "";
+      let waveStartTime = Date.now();
+      let comboCount = 0;
+      
+      let player = { x: Math.floor(GRID_SIZE / 2), y: Math.floor(GRID_SIZE / 2), speedMultiplier: 1, damageMultiplier: 1, phaseActive: false, blackHoleActive: false };
+      let playerDrawX = player.x * CELL_SIZE + CELL_SIZE / 2;
+      let playerDrawY = player.y * CELL_SIZE + CELL_SIZE / 2;
+      
+      let moving = false,
+        pendingDirection = null,
+        currentDirection = null;
+      let currentMoveDelay = 90,
+        MIN_MOVE_DELAY = 0,
+        lastMoveTimestamp = 0;
+      let targetAngle = 0,
+        currentPlayerAngle = 0,
+        targetTiltX = 0,
+        currentTiltX = 0,
+        targetTiltZ = 0,
+        currentTiltZ = 0;
+      let rotationResetTimer = null;
+      
+      let collectibles = [],
+        messageCollectibles = [],
+        enemies = [],
+        wallAlerts = [];
+      let powerUpsOnMap = [],
+        activeEffects = [],
+        hasReviveTotem = false,
+        invulnerableUntil = 0;
+      let floatingTexts = [];
+      
+      let score = 0,
+        highScore = parseInt(localStorage.getItem('odparHighScore')) || 0;
+      let gameOver = false,
+        wave = 1,
+        evadedThisWave = 0;
+      let premiumFlash = 0,
+        playerGlow = 0;
+      let glitchActive = false,
+        glitchTimer = 2,
+        glitchIntensity = 0;
+      let lastBossTime = Date.now(),
+        lastHumTime = 0;
+      let safeZoneDisabledForWave = false,
+        doublePointsActive = false;
+      
+      let currentWeather = null,
+        previousWeather = null,
+        weatherTransition = 1,
+        weatherTransitionTimer = 0;
+      let zones = [],
+        zoneTimers = {};
+      
+      // estadísticas
+      let totalRainWaves = 0,
+        totalEclipseWaves = 0,
+        totalThunderstormWaves = 0,
+        totalSnowWaves = 0;
+      let totalFogWaves = 0,
+        totalNebulaWaves = 0,
+        totalInfernoWaves = 0;
+      let totalGhostPassthrough = 0,
+        maxCombo = 0,
+        totalPowerUpsUsed = 0,
+        totalEnemiesEvaded = 0;
+      let totalWavesCompleted = 0,
+        totalCellsCollected = 0,
+        totalShieldsBroken = 0,
+        totalRevivesUsed = 0;
+      let totalBossesDefeated = 0,
+        chainMultiplier = 1,
+        lastWaveCompletionTime = 0,
+        revivesUsedThisGame = 0;
+      let evadedSinceLastDoubleBonus = 0,
+        scoreSinceLastDoubleBonus = 0;
+      let premiumCollectedSinceLastTripleBonus = 0,
+        bossesEvadedSinceLastTripleBonus = 0;
+      let totalMessageCellsCollected = parseInt(localStorage.getItem('odparTotalCells')) || 0;
+      let totalBossWavesSurvived = parseInt(localStorage.getItem('odparBossWaves')) || 0;
+      
+      // UI
+      let paused = false,
+        debugMode = false,
+        shopOpen = false;
+      let controlsInverted = false,
+        fogOfWarActive = false;
+      let pauseAchPage = 0;
+      
+      let enemySpawnConfig = {
+        normal: { minInterval: 2200, maxInterval: 3000, baseCount: 1, countVariance: 1, speed: 0.058, alertTimeMs: 420 },
+        boss: { interval: 18000, alertTimeMs: 700, speed: 0.065 }
+      };
+      
+      // Inicializar clima
+      applyWeather('none');
+      
+      // guardado
+      function saveGame() {
+        try {
+          const data = {
+            version: SAVE_VERSION,
+            wave,
+            score,
+            highScore,
+            playerX: player.x,
+            playerY: player.y,
+            activeEffects: activeEffects.map(e => ({ ...e })),
+            playerInventory: playerInventory.map(p => ({ type: p.type })),
+            hasReviveTotem,
+            totalEnemiesEvaded,
+            totalBossesDefeated,
+            totalCellsCollected,
+            totalPowerUpsUsed,
+            maxCombo,
+            totalWavesCompleted,
+            currentWeatherType: currentWeather?.name || 'none',
+            zones: zones.map(z => ({ type: z.type, x: z.x, y: z.y, expires: z.expires })),
+            unlockedAchievements
+          };
+          localStorage.setItem('odparSave', JSON.stringify(data));
+        } catch (e) {}
+      }
+      
+      function loadGame() {
+        try {
+          const raw = localStorage.getItem('odparSave');
+          if (!raw) return false;
+          const data = JSON.parse(raw);
+          if (data.version !== SAVE_VERSION) return migrateSave(data);
+          wave = data.wave || 1;
+          score = data.score || 0;
+          highScore = Math.max(highScore, data.highScore || 0);
+          player.x = data.playerX || Math.floor(GRID_SIZE / 2);
+          player.y = data.playerY || Math.floor(GRID_SIZE / 2);
+          activeEffects = data.activeEffects || [];
+          playerInventory = data.playerInventory || [];
+          hasReviveTotem = data.hasReviveTotem || false;
+          totalEnemiesEvaded = data.totalEnemiesEvaded || 0;
+          totalBossesDefeated = data.totalBossesDefeated || 0;
+          totalCellsCollected = data.totalCellsCollected || 0;
+          totalPowerUpsUsed = data.totalPowerUpsUsed || 0;
+          maxCombo = data.maxCombo || 0;
+          totalWavesCompleted = data.totalWavesCompleted || 0;
+          if (data.currentWeatherType && data.currentWeatherType !== 'none') applyWeather(data.currentWeatherType);
+          zones = data.zones || [];
+          unlockedAchievements = data.unlockedAchievements || {};
+          updateDifficulty();
+          currentWaveConfig = getMessageConfig(wave);
+          currentWaveMessage = currentWaveConfig.text;
+          resizeGameElements();
+          updateUI();
+          return true;
+        } catch (e) { return false; }
+      }
+      
+      function migrateSave(oldData) {
+        try {
+          oldData.playerInventory = oldData.playerInventory || [];
+          oldData.totalBossesDefeated = oldData.totalBossesDefeated || 0;
+          oldData.totalWavesCompleted = oldData.totalWavesCompleted || 0;
+          oldData.zones = oldData.zones || [];
+          oldData.activeEffects = oldData.activeEffects || [];
+          oldData.version = SAVE_VERSION;
+          localStorage.setItem('odparSave', JSON.stringify(oldData));
+          return loadGame();
+        } catch (e) { return false; }
+      }
+      
+      // ═══════════════════════════════════════
+      // FLOATING TEXT
+      // ═══════════════════════════════════════
+      class FloatingText {
+        constructor(x, y, text, color, isPremium, big = false, isTriple = false) {
+          this.x = x;
+          this.y = y - 40;
+          this.text = text;
+          this.color = isTriple ? '#FFD700' : color;
+          this.isPremium = isPremium || isTriple;
+          this.life = big ? 110 : (isTriple ? 120 : (isPremium ? 100 : 85));
+          this.alpha = 1;
+          this.vy = -1.8;
+          this.scale = big ? 0.65 : (isTriple ? 0.72 : 0.55);
+          this.big = big || isTriple;
+          this.isTriple = isTriple;
+        }
+        update() {
+          this.y += this.vy;
+          this.vy *= 0.975;
+          this.life--;
+          if (this.scale < (this.big ? 1.0 : 1.05)) this.scale += 0.02;
+          this.alpha = Math.max(0, this.life / (this.isTriple ? 120 : (this.big ? 110 : (this.isPremium ? 100 : 85))));
+        }
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.alpha;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const fs = this.isTriple ? 40 : (this.big ? 34 : Math.floor(38 * this.scale));
+          ctx.font = `900 ${fs}px "Press Start 2P","Courier New",monospace`;
+          ctx.lineWidth = this.isTriple ? 3 : 2.2;
+          ctx.strokeStyle = '#000000';
+          ctx.strokeText(this.text, this.x, this.y);
+          ctx.fillStyle = this.isTriple ? '#FFD700' : (this.big ? '#FFFFAA' : (this.isPremium ? '#ffccff' : '#ffffcc'));
+          ctx.fillText(this.text, this.x, this.y);
+          if (this.isTriple) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(this.text, this.x - 1, this.y - 1);
+            ctx.fillStyle = '#FFAA00';
+            ctx.fillText(this.text, this.x, this.y);
+          }
+          ctx.restore();
+        }
+      }
+      
+      function createFloatingText(x, y, points, isPremium = false, isTriple = false) {
+        floatingTexts.push(new FloatingText(Math.max(70, Math.min(CANVAS_SIZE - 70, x)), y - 35, `+${points}`, isTriple ? '#FFD700' : (isPremium ? '#ff44ff' : '#ffff44'), isPremium, false, isTriple));
+      }
+      
+      // ═══════════════════════════════════════
+      // ALERTAS DE PARED
+      // ═══════════════════════════════════════
+      function addWallAlert(dir, isBoss, coord, delay) {
+        wallAlerts.push({ dir, isBoss, coord, expiryTime: Date.now() + delay });
+      }
+      
+      function drawWallAlerts() {
+        const now = Date.now();
+        for (let i = wallAlerts.length - 1; i >= 0; i--) {
+          const a = wallAlerts[i];
+          if (now >= a.expiryTime) { wallAlerts.splice(i, 1); continue; }
+          const remaining = (a.expiryTime - now) / (a.isBoss ? ENEMY_CONFIG.bossAlertTimeMs : ENEMY_CONFIG.defaultAlertTimeMs);
+          const alpha = Math.min(0.95, remaining * 0.9 + 0.2);
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = a.isBoss ? '#ff66ff' : '#ffff44';
+          ctx.lineWidth = a.isBoss ? 9 : 6;
+          if (a.dir === 'down') {
+            const x = a.coord * CELL_SIZE + CELL_SIZE / 2;
+            ctx.beginPath();
+            ctx.moveTo(x - CELL_SIZE * 1.8, 20);
+            ctx.lineTo(x + CELL_SIZE * 1.8, 20);
+            ctx.stroke();
+          }
+          else if (a.dir === 'up') {
+            const x = a.coord * CELL_SIZE + CELL_SIZE / 2;
+            ctx.beginPath();
+            ctx.moveTo(x - CELL_SIZE * 1.8, CANVAS_SIZE - 20);
+            ctx.lineTo(x + CELL_SIZE * 1.8, CANVAS_SIZE - 20);
+            ctx.stroke();
+          }
+          else if (a.dir === 'left') {
+            const y = a.coord * CELL_SIZE + CELL_SIZE / 2;
+            ctx.beginPath();
+            ctx.moveTo(CANVAS_SIZE - 20, y - CELL_SIZE * 1.8);
+            ctx.lineTo(CANVAS_SIZE - 20, y + CELL_SIZE * 1.8);
+            ctx.stroke();
+          }
+          else if (a.dir === 'right') {
+            const y = a.coord * CELL_SIZE + CELL_SIZE / 2;
+            ctx.beginPath();
+            ctx.moveTo(20, y - CELL_SIZE * 1.8);
+            ctx.lineTo(20, y + CELL_SIZE * 1.8);
+            ctx.stroke();
+          }
+          if (a.isBoss) {
+            ctx.fillStyle = '#ff66ff';
+            ctx.font = 'bold 20px "Press Start 2P",monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('BOSS', CANVAS_SIZE / 2, 48);
+          }
+          ctx.restore();
+        }
+      }
+      
+      // ═══════════════════════════════════════
+      // DIBUJO DE CELDAS DE MENSAJE
+      // ═══════════════════════════════════════
+      function drawMessageCollectibles() {
+        const now = Date.now();
+        for (let cell of messageCollectibles) {
+          const px = cell.x * CELL_SIZE + CELL_SIZE / 2,
+            py = cell.y * CELL_SIZE + CELL_SIZE / 2;
+          let scale = 1,
+            alpha = 1,
+            offsetX = 0,
+            offsetY = 0;
+          const eff = parseEffectsString(cell.effects);
+          const ep = cell.effectParams || {};
+          if (eff.pulseAmplitude) scale += Math.sin(now * 0.003 * (eff.pulseSpeed || 0.3)) * eff.pulseAmplitude;
+          if (eff.chaosOffsetMax) {
+            offsetX = (Math.random() - 0.5) * (ep.chaosOffsetMax || eff.chaosOffsetMax);
+            offsetY = (Math.random() - 0.5) * (ep.chaosOffsetMax || eff.chaosOffsetMax);
+          }
+          if (eff.stealthAlphaMin !== undefined) {
+            alpha = Math.sin(now * 0.002 * (eff.stealthSpeed || 0.4)) * 0.5 + 0.5;
+            alpha = Math.max(eff.stealthAlphaMin, alpha);
+          }
+          if (eff.blinkMinAlpha !== undefined) alpha = Math.sin(now * 0.006 * (eff.blinkSpeed || 0.2)) > 0 ? 1 : (eff.blinkMinAlpha || 0.3);
+          if (eff.rotateAmplitude) scale *= 1 + Math.sin(now * 0.004 * (eff.rotateSpeed || 0.02)) * (eff.rotateAmplitude || 0.15);
+          // animación de entrada
+          if (cell.entranceStyle && cell.entranceStyle !== "none") {
+            const age = now - cell.entranceDelay;
+            if (age < 0) continue;
+            const t = Math.min(1, age / 400);
+            if (cell.entranceStyle === "fadeIn") alpha *= t;
+            else if (cell.entranceStyle === "scaleUp") scale *= 0.2 + 0.8 * t;
+            else if (cell.entranceStyle === "spiral") {
+              const a = (1 - t) * Math.PI * 4,
+                r = (1 - t) * 100;
+              offsetX += Math.cos(a) * r;
+              offsetY += Math.sin(a) * r;
+            }
+          }
+          const s = CELL_SIZE * 0.34 * scale;
+          // color dinámico
+          let cellColor = cell.color;
+          if (cell.fillColor === "rainbow" || cell.fillColor === "rainbow_fast" || cell.fillColor === "rainbow_slow") {
+            const spd = cell.fillColor === "rainbow_fast" ? 0.5 : (cell.fillColor === "rainbow_slow" ? 0.1 : (cell.rainbowSpeed || 0.5));
+            cellColor = `hsl(${(now*spd+(cell.x+cell.y)*5)%360},90%,55%)`;
+          } else if (cell.fillColor === "palette" && cell.palette) {
+            const pal = PALETTES[cell.palette];
+            if (pal) cellColor = pal[(cell.x + cell.y + Math.floor(now / 200)) % pal.length];
+          }
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          // glow
+          const gr = (ep.glowRadius !== undefined ? ep.glowRadius : eff.glowRadius) || 0;
+          if (gr > 0) {
+            const glowR = CELL_SIZE * gr * 0.4;
+            const grd = ctx.createRadialGradient(px + offsetX, py + offsetY, 0, px + offsetX, py + offsetY, glowR);
+            const glowColor = ep.glowColor || eff.glowColor || '#ffffff';
+            // Convierte cualquier color a hexadecimal con canal alpha
+ctx.fillStyle = glowColor;
+const solidColor = ctx.fillStyle; // formato rgb() o #hex
+const rgb = solidColor.startsWith('#') ? solidColor : solidColor.slice(4, -1).split(',').map(Number);
+if (Array.isArray(rgb)) {
+  grd.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.53)`);
+} else {
+  grd.addColorStop(0, glowColor + '88'); // solo si ya es #hex
+}
+            grd.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grd;
+            ctx.beginPath();
+            ctx.arc(px + offsetX, py + offsetY, glowR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          // orbitas boss
+          if (cell.effects && cell.effects.includes('boss')) {
+            const oa = now * 0.004 + cell.x * 0.5;
+            for (let i = 0; i < 3; i++) {
+              const a = oa + i * Math.PI * 2 / 3;
+              ctx.fillStyle = 'rgba(255,255,100,0.6)';
+              ctx.beginPath();
+              ctx.arc(px + Math.cos(a) * s * 1.5, py + Math.sin(a) * s * 1.5, 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          ctx.fillStyle = cellColor || MESSAGE_CONFIG.defaultFillColor;
+          ctx.beginPath();
+          ctx.arc(px + offsetX, py + offsetY, s, 0, Math.PI * 2);
+          ctx.fill();
+          if (cell.strokeColor?.mode === "fixed") {
+            ctx.strokeStyle = cell.strokeColor.value;
+            ctx.lineWidth = cell.strokeColor.width || 1;
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+      
+      // ═══════════════════════════════════════
+      // JUGADOR
+      // ═══════════════════════════════════════
+      function drawPlayer() {
+        const px = playerDrawX,
+          py = playerDrawY + Math.sin(Date.now() * 0.005) * 3;
+        const size = CELL_SIZE * 0.72;
+        const invulnerable = Date.now() < invulnerableUntil;
+        const blink = invulnerable && Math.floor(Date.now() / 100) % 2 === 0;
+        let angleDiff = targetAngle - currentPlayerAngle;
+        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+        currentPlayerAngle += angleDiff * 0.15;
+        currentTiltX += (targetTiltX - currentTiltX) * 0.2;
+        currentTiltZ += (targetTiltZ - currentTiltZ) * 0.2;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(currentPlayerAngle);
+        ctx.transform(1, currentTiltZ * 0.15, currentTiltX * 0.15, 1, 0, 0);
+        if (blink) ctx.globalAlpha = 0.5;
+        const hasShield = activeEffects.some(e => e.type === 'shield');
+        if (hasShield) {
+          ctx.beginPath();
+          ctx.arc(0, 0, size * 1.1, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(170,221,255,0.2)';
+          ctx.fill();
+          ctx.strokeStyle = '#aaddff';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+        // radio del imán
+        if (activeEffects.some(e => e.type.startsWith('magnet'))) {
+          const magnet = activeEffects.find(e => e.type.startsWith('magnet'));
+          const radius = POWERUP_CONFIG.types[magnet.type]?.radius || 0;
+          const step = CELL_SIZE * (radius >= 999 ? 2 : radius * 0.8);
+          ctx.strokeStyle = '#44ffcc';
+          ctx.lineWidth = 1.2;
+          ctx.globalAlpha = 0.25;
+          ctx.beginPath();
+          ctx.arc(0, 0, step, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, step * 0.75, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = blink ? 0.5 : 1;
+        }
+        // nave
+        ctx.beginPath();
+        ctx.moveTo(0, -size * 0.85);
+        ctx.lineTo(-size * 0.55, size * 0.4);
+        ctx.lineTo(0, size * 0.2);
+        ctx.lineTo(size * 0.55, size * 0.4);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fill();
+        ctx.strokeStyle = 'skyblue';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        // alas
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.5, size * 0.1);
+        ctx.lineTo(-size * 0.95, size * 0.5);
+        ctx.lineTo(-size * 0.45, size * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(size * 0.5, size * 0.1);
+        ctx.lineTo(size * 0.95, size * 0.5);
+        ctx.lineTo(size * 0.45, size * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        // cabina
+        ctx.beginPath();
+        ctx.arc(0, -size * 0.25, size * 0.2, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(150,220,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // tótem de revivir
+        if (hasReviveTotem) {
+          ctx.fillStyle = '#88ff88';
+          ctx.beginPath();
+          ctx.arc(size * 0.55, -size * 0.65, size * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(size * 0.55, -size * 0.65, size * 0.07, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        // glow del jugador
+        if (playerGlow > 0) {
+          ctx.fillStyle = `rgba(180,255,255,${playerGlow/45})`;
+          ctx.beginPath();
+          ctx.arc(px, py, CELL_SIZE * 1.3, 0, Math.PI * 2);
+          ctx.fill();
+          playerGlow--;
+        }
+        // agujero negro visual
+        if (player.blackHoleActive) {
+          ctx.save();
+          ctx.strokeStyle = '#8800ff';
+          ctx.lineWidth = 3;
+          ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.01) * 0.4;
+          for (let r = 1; r <= 3; r++) {
+            ctx.beginPath();
+            ctx.arc(px, py, CELL_SIZE * r * 0.6, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+      
+      function drawActiveEffectsHUD() {
+        if (!activeEffects.length) return;
+        let y = 40;
+        const x = CANVAS_SIZE - 20,
+          now = Date.now();
+        ctx.save();
+        ctx.font = '14px "Press Start 2P",monospace';
+        ctx.textAlign = 'right';
+        for (let ef of activeEffects) {
+          const info = POWERUP_TYPES[ef.type];
+          if (!info) continue;
+          const left = Math.ceil(Math.max(0, ef.expires - now) / 1000);
+          const text = (info.name || ef.type).slice(0, 4) + (info.level ? ' ' + info.level : '') + (ef.expires > now ? ' ' + left + 's' : '');
+          ctx.fillStyle = info.color || '#ffffff';
+          ctx.fillText(text, x - 10, y);
+          y += 22;
+        }
+        ctx.restore();
+      }
+      
+      function drawGlitchEffect() {
+        if (!glitchActive || glitchTimer <= 0) return;
+        glitchTimer--;
+        const intensity = glitchIntensity * (glitchTimer / 2);
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, intensity);
+        for (let i = 0; i < 6; i++) {
+          const offset = (Math.random() - 0.5) * 18 * intensity;
+          const sliceY = Math.random() * CANVAS_SIZE,
+            sliceH = 8 + Math.random() * 22;
+          ctx.drawImage(canvas, 0, sliceY, CANVAS_SIZE, sliceH, offset, sliceY, CANVAS_SIZE, sliceH);
+        }
+        if (!AccessibilityOptions.reduceFlashes && Math.random() < 0.4) {
+          ctx.fillStyle = Math.random() < 0.1 ? '#00ffff' : '#ff00ff';
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        }
+        ctx.restore();
+        if (glitchTimer <= 0) {
+          glitchActive = false;
+          glitchIntensity = 0;
+        }
+      }
+      
+      // ═══════════════════════════════════════
+      // LÓGICA DE COLECCIONABLES
+      // ═══════════════════════════════════════
+      function collectCell(cell, isPremium = false) {
+        const px = cell.x * CELL_SIZE + CELL_SIZE / 2,
+          py = cell.y * CELL_SIZE + CELL_SIZE / 2;
+        if (isPremium) {
+          const totalCells = messageCollectibles.length + 1;
+          const collectedCount = totalCells - messageCollectibles.length;
+          let pts = calculatePointsPerCell(currentWaveConfig, comboCount, totalCells, collectedCount, { x: cell.x, y: cell.y }, GRID_SIZE);
+          if (doublePointsActive) pts *= 2;
+          if (isInZone("comboZone")) pts = Math.floor(pts * (ZONE_CONFIG.comboZone.comboMultiplier || 2));
+          score += pts;
+          scoreSinceLastDoubleBonus += pts;
+          premiumCollectedSinceLastTripleBonus++;
+          totalMessageCellsCollected++;
+          totalCellsCollected++;
+          localStorage.setItem('odparTotalCells', totalMessageCellsCollected.toString());
+          createExplosion(px, py, 20, '#ff88ff');
+          createFloatingText(px, py, pts, true);
+          playPremiumCollect();
+          messageCollectibles = messageCollectibles.filter(c => c !== cell);
+          comboCount++;
+          chainMultiplier = Math.min(5, 1 + Math.floor(comboCount / 5));
+          if (comboCount > maxCombo) maxCombo = comboCount;
+        } else {
+          let pts = doublePointsActive ? 16 : 8;
+          score += pts;
+          scoreSinceLastDoubleBonus += pts;
+          createExplosion(px, py, 15, '#ffd700');
+          createFloatingText(px, py, pts);
+          playNormalCollect();
+          collectibles = collectibles.filter(c => c !== cell);
+        }
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('odparHighScore', highScore);
+        }
+        updateUI();
+      }
+      
+      function moveCellTowardsPlayer(cell, magnetRadius) {
+        if (magnetRadius >= 999) {
+          cell.x = player.x;
+          cell.y = player.y;
+          return;
+        }
+        cell.x += Math.sign(player.x - cell.x);
+        cell.y += Math.sign(player.y - cell.y);
+      }
+      
+      function checkCollectibles() {
+        let magnetRadius = 0;
+        for (let ef of activeEffects)
+          if (ef.type.startsWith('magnet') && (POWERUP_CONFIG.types[ef.type]?.radius || 0) > magnetRadius)
+            magnetRadius = POWERUP_CONFIG.types[ef.type].radius || 0;
+        
+        function inRange(cx, cy) {
+          if (magnetRadius === 0) return (cx === player.x && cy === player.y);
+          const dx = Math.abs(cx - player.x),
+            dy = Math.abs(cy - player.y);
+          if (magnetRadius >= 999) return true;
+          return dx <= magnetRadius && dy <= magnetRadius;
+        }
+        
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+          if (inRange(collectibles[i].x, collectibles[i].y)) {
+            if (magnetRadius > 0 && (collectibles[i].x !== player.x || collectibles[i].y !== player.y))
+              moveCellTowardsPlayer(collectibles[i], magnetRadius);
+            if (collectibles[i].x === player.x && collectibles[i].y === player.y) {
+              collectCell(collectibles[i], false);
+              if (collectibles.length === 0 && messageCollectibles.length === 0) completeWave();
+              return;
+            }
+          }
+        }
+        for (let i = messageCollectibles.length - 1; i >= 0; i--) {
+          const cell = messageCollectibles[i];
+          if (inRange(cell.x, cell.y)) {
+            if (magnetRadius > 0 && (cell.x !== player.x || cell.y !== player.y)) moveCellTowardsPlayer(cell, magnetRadius);
+            if (cell.x === player.x && cell.y === player.y) {
+              collectCell(cell, true);
+              if (messageCollectibles.length === 0 && currentWaveMessage) {
+                const elapsed = Date.now() - waveStartTime;
+                let bonus = calculateCompletionBonus(currentWaveConfig, comboCount, comboCount, elapsed);
+                if (doublePointsActive) bonus *= 2;
+                if (currentWaveConfig.bonusOnCompleteEnabled !== false && bonus > 0) {
+                  score += bonus;
+                  if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('odparHighScore', highScore);
+                  }
+                  createExplosion(CANVAS_SIZE / 2, CANVAS_SIZE / 2, 50, '#ffd700', 2.5);
+                  floatingTexts.push(new FloatingText(CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 40, `MSG +${bonus}`, '#FFD700', true, true, true));
+                  playTripleBonusCollect();
+                  updateUI();
+                }
+                if (collectibles.length === 0) completeWave();
+              }
+              return;
+            }
+          }
+        }
+        for (let i = powerUpsOnMap.length - 1; i >= 0; i--) {
+          if (powerUpsOnMap[i].x === player.x && powerUpsOnMap[i].y === player.y) {
+            const cfg = POWERUP_CONFIG.types[powerUpsOnMap[i].type];
+            if (cfg?.instantActivate) tryActivatePowerUp(powerUpsOnMap[i]);
+            else tryStoreOrActivatePowerUp(powerUpsOnMap[i]);
+            return;
+          }
+        }
+      }
+      
+      function checkEnemyCollision() {
+        if (isInSafeZone() || Date.now() < invulnerableUntil) return false;
+        if (isInGhostZone() || player.phaseActive) { totalGhostPassthrough++; return false; }
+        for (let enemy of enemies) {
+          const cells = enemy.getOccupiedCells();
+          for (let cell of cells) {
+            if (cell.x < 0 || cell.x >= GRID_SIZE || cell.y < 0 || cell.y >= GRID_SIZE) continue;
+            if (player.x === cell.x && player.y === cell.y) {
+              // 1º escudo
+              const shieldIdx = activeEffects.findIndex(ef => ef.type === 'shield');
+              if (shieldIdx !== -1) {
+                activeEffects.splice(shieldIdx, 1);
+                totalShieldsBroken++;
+                const idx = enemies.indexOf(enemy);
+                if (idx !== -1) {
+                  createExplosion(enemy.x * CELL_SIZE + CELL_SIZE / 2, enemy.y * CELL_SIZE + CELL_SIZE / 2, 25, '#aaddff');
+                  enemies.splice(idx, 1);
+                }
+                createFloatingText(playerDrawX, playerDrawY - 20, "ESCUDO ROTO", true);
+                SPECIAL_SOUNDS.shieldBreak();
+                invulnerableUntil = Date.now() + 800;
+                return false;
+              }
+              // 2º revive
+              if (hasReviveTotem) {
+                hasReviveTotem = false;
+                totalRevivesUsed++;
+                revivesUsedThisGame++;
+                enemies = [];
+                createExplosion(playerDrawX, playerDrawY, 50, '#88ff88', 2.2);
+                createFloatingText(CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 50, "REVIVIDO", true, true);
+                invulnerableUntil = Date.now() + 1500;
+                checkAchievements();
+                return false;
+              }
+              // 3º game over
+              gameOver = true;
+              createExplosion(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2, 50, '#ff0000', 1.5);
+              playHitSound();
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      
+      function generateCollectibles() {
+        collectibles = [];
+        messageCollectibles = [];
+        const normalCount = Math.max(3, Math.floor(GRID_SIZE * 0.1));
+        for (let i = 0; i < normalCount; i++) {
+          let x, y, attempts = 0;
+          do {
+            x = Math.floor(Math.random() * GRID_SIZE);
+            y = Math.floor(Math.random() * GRID_SIZE);
+            attempts++;
+          }
+          while (attempts < 400 && ((x === player.x && y === player.y) || collectibles.some(c => c.x === x && c.y === y)));
+          if (attempts < 400) collectibles.push({ x, y });
+        }
+        if (currentWaveMessage && GRID_SIZE >= 8) {
+          const coords = messageToCoordsAdvanced(currentWaveMessage, currentWaveConfig, GRID_SIZE);
+          for (let c of coords) {
+            if (c.x >= 0 && c.x < GRID_SIZE && c.y >= 0 && c.y < GRID_SIZE && !(c.x === player.x && c.y === player.y)) {
+              if (!collectibles.some(p => p.x === c.x && p.y === c.y) && !powerUpsOnMap.some(p => p.x === c.x && p.y === c.y))
+                messageCollectibles.push(c);
+            }
+          }
+        }
+      }
+      
+      function updateDifficulty() {
+        const w = Math.min(wave, 30);
+        enemySpawnConfig.normal.minInterval = Math.max(800, 1800 - w * 22);
+        enemySpawnConfig.normal.maxInterval = Math.max(1200, 3200 - w * 40);
+        enemySpawnConfig.normal.baseCount = 1 + Math.floor(w / 7);
+        enemySpawnConfig.normal.countVariance = 1 + Math.floor(w / 10);
+        enemySpawnConfig.normal.speed = Math.min(ENEMY_CONFIG.maxSpeedCap, 0.062 + w * 0.0032);
+        enemySpawnConfig.boss.interval = Math.max(10000, 22000 - w * 300);
+        enemySpawnConfig.boss.speed = Math.min(0.11, 0.058 + w * 0.0018);
+        ENEMY_CONFIG.baseSpeedNormal = enemySpawnConfig.normal.speed;
+        ENEMY_CONFIG.baseSpeedBoss = enemySpawnConfig.boss.speed;
+      }
+      
+      function applyOleadaModifiers(config) {
+        if (!config) return;
+        if (config.enemySpeedMultiplier && config.enemySpeedMultiplier !== 1) {
+          enemySpawnConfig.normal.speed *= config.enemySpeedMultiplier;
+          enemySpawnConfig.boss.speed *= config.enemySpeedMultiplier;
+          ENEMY_CONFIG.baseSpeedNormal = enemySpawnConfig.normal.speed;
+          ENEMY_CONFIG.baseSpeedBoss = enemySpawnConfig.boss.speed;
+        }
+        if (config.spawnRateMultiplier && config.spawnRateMultiplier !== 1) {
+          enemySpawnConfig.normal.minInterval = Math.max(300, enemySpawnConfig.normal.minInterval * config.spawnRateMultiplier);
+          enemySpawnConfig.normal.maxInterval = Math.max(500, enemySpawnConfig.normal.maxInterval * config.spawnRateMultiplier);
+        }
+        if (config.powerUpSpawnRate && config.powerUpSpawnRate !== 1) POWERUP_CONFIG.spawnCount = Math.ceil(3 * config.powerUpSpawnRate);
+        safeZoneDisabledForWave = config.safeZoneDisabled || false;
+        doublePointsActive = config.doublePoints || false;
+        if (config.bossRush)
+          for (let i = 0; i < 3; i++) timers.add(() => { if (!gameOver) triggerBossWave(); }, 2000 + i * 1500);
+        if (config.invulnerableOnWaveStart) invulnerableUntil = Date.now() + config.invulnerableOnWaveStart;
+        if (config.playerGlowOnStart) playerGlow = config.playerGlowOnStart;
+        if (config.glitchIntensity) glitchIntensity = config.glitchIntensity;
+        if (config.specialSound && SPECIAL_SOUNDS[config.specialSound]) SPECIAL_SOUNDS[config.specialSound]();
+      }
+      
+      function resizeGameElements() {
+        CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
+        player.x = Math.floor(GRID_SIZE / 2);
+        player.y = Math.floor(GRID_SIZE / 2);
+        playerDrawX = player.x * CELL_SIZE + CELL_SIZE / 2;
+        playerDrawY = player.y * CELL_SIZE + CELL_SIZE / 2;
+        moving = false;
+        pendingDirection = null;
+        currentDirection = null;
+        enemies = [];
+        wallAlerts = [];
+        generateCollectibles();
+        lastBossTime = Date.now();
+        powerUpsOnMap = [];
+        updateUI();
+      }
+      
+      function updateUI() {
+        const scoreEl = document.getElementById('score');
+        const hiEl = document.getElementById('highScore');
+        const waveEl = document.getElementById('waveSpan');
+        const evEl = document.getElementById('evadedSpan');
+        if (scoreEl) scoreEl.textContent = String(score).padStart(6, '0');
+        if (hiEl) hiEl.textContent = String(highScore).padStart(6, '0');
+        if (waveEl) waveEl.textContent = wave;
+        if (evEl) evEl.textContent = evadedThisWave;
+        const weatherEl = document.getElementById('hud-weather');
+        const comboEl = document.getElementById('hud-combo');
+        const effectsEl = document.getElementById('hud-effects');
+        const inventoryEl = document.getElementById('hud-inventory');
+        if (weatherEl) weatherEl.textContent = currentWeather?.name || 'Despejado';
+        if (comboEl) comboEl.textContent = chainMultiplier > 1 ? `x${chainMultiplier} COMBO` : '';
+        if (effectsEl) effectsEl.textContent = activeEffects.filter(e => e.expires > Date.now()).map(e => { const info = POWERUP_TYPES[e.type]; return info ? (info.name || e.type).slice(0, 4) : e.type.slice(0, 4); }).join(' ') || '';
+        if (inventoryEl) inventoryEl.textContent = playerInventory.length > 0 ? playerInventory.map(p => `[${(POWERUP_TYPES[p.type]?.name||p.type).slice(0,4).toUpperCase()}]`).join(' ') : '';
+      }
+      
+      // ═══════════════════════════════════════
+      // WAVE EVENTS
+      // ═══════════════════════════════════════
+      const WAVE_EVENTS = {
+        10: { type: "doubleScore", message: "PUNTUACION DOBLE!", duration: 15000 },
+        20: { type: "bossRush", message: "EMBOSCADA!", count: 8 },
+        25: { type: "megabomb", message: "MEGABOMBA!" },
+        30: { type: "legendary", message: "TODO GRATUITO!", duration: 20000 },
+        40: { type: "weather", weather: "snow", message: "VENTISCA!" },
+        50: { type: "ultimate", message: "MODO ULTIMATE!" }
+      };
+      
+      function triggerWaveEvent(wvNum) {
+        const event = WAVE_EVENTS[wvNum];
+        if (!event) return;
+        floatingTexts.push(new FloatingText(CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 60, event.message, '#FFD700', true, true, false));
+        switch (event.type) {
+          case 'doubleScore':
+            doublePointsActive = true;
+            timers.add(() => { doublePointsActive = false; }, event.duration || 15000);
+            break;
+          case 'bossRush':
+            for (let i = 0; i < (event.count || 8); i++) timers.add(() => { if (!gameOver) spawnEnemy('boss', ['down', 'up', 'left', 'right'][i % 4]); }, i * 300);
+            break;
+          case 'megabomb':
+            enemies = [];
+            createExplosion(CANVAS_SIZE / 2, CANVAS_SIZE / 2, 60, '#ff6644', 2.5);
+            SPECIAL_SOUNDS.megaExplosion();
+            break;
+          case 'legendary': {
+            const origCosts = {};
+            ['magnetCommon', 'magnetEpic', 'bombNormal'].forEach(t => {
+              if (POWERUP_CONFIG.types[t]) {
+                origCosts[t] = POWERUP_CONFIG.types[t].cost;
+                POWERUP_CONFIG.types[t].cost = 0;
+              }
+            });
+            timers.add(() => { Object.keys(origCosts).forEach(t => { POWERUP_CONFIG.types[t].cost = origCosts[t]; }); }, event.duration || 20000);
+          }
+          break;
+          case 'weather':
+            applyWeather(event.weather);
+            break;
+          case 'ultimate':
+            Object.keys(POWERUP_CONFIG.types).forEach(t => { if (POWERUP_CONFIG.types[t].enabled && !['revive', 'bombNormal', 'bombLegendary'].includes(t)) activeEffects.push({ type: t, expires: Date.now() + 20000, radius: POWERUP_CONFIG.types[t].radius || 0 }); });
+            doublePointsActive = true;
+            SPECIAL_SOUNDS.levelUp();
+            break;
+        }
+        updateUI();
+      }
+      
+      // ═══════════════════════════════════════
+      // COMPLETE WAVE
+      // ═══════════════════════════════════════
+      function completeWave() {
+        if (gameOver) return;
+        if (comboCount > maxCombo) maxCombo = comboCount;
+        chainMultiplier = 1;
+        lastWaveCompletionTime = Date.now() - waveStartTime;
+        if (currentWaveConfig?.bossRush) {
+          totalBossWavesSurvived++;
+          localStorage.setItem('odparBossWaves', totalBossWavesSurvived.toString());
+        }
+        checkAchievements();
+        totalWavesCompleted++;
+        wave++;
+        evadedThisWave = 0;
+        comboCount = 0;
+        waveStartTime = Date.now();
+        currentWaveConfig = getMessageConfig(wave);
+        currentWaveMessage = currentWaveConfig.text;
+        updateDifficulty();
+        applyOleadaModifiers(currentWaveConfig);
+        WaveStateMachine.start(wave);
+        const oldSize = GRID_SIZE;
+        let newSize;
+        if (wave > 1) {
+          if (MESSAGE_CONFIG.autoGrid && currentWaveMessage) {
+            newSize = calculateGridSizeForMessage(currentWaveMessage, currentWaveConfig.mapSizeMode || "fittext");
+            if (newSize < 18 && Math.random() < 0.5) newSize += Math.floor(Math.random() * 5);
+          } else {
+            newSize = (wave % 5 === 0) ? 20 + Math.floor(Math.random() * 11) : 10 + Math.floor(Math.random() * 11);
+          }
+          newSize = Math.max(MESSAGE_CONFIG.gridMin, Math.min(MESSAGE_CONFIG.gridMax, newSize));
+        } else newSize = INITIAL_GRID_SIZE;
+        GRID_SIZE = newSize;
+        adjustZonesToNewGrid(oldSize, newSize);
+        resizeGameElements();
+        playerDrawX = player.x * CELL_SIZE + CELL_SIZE / 2;
+        playerDrawY = player.y * CELL_SIZE + CELL_SIZE / 2;
+        glitchActive = true;
+        glitchTimer = 40;
+        glitchIntensity = currentWaveConfig.glitchIntensity ?? 1;
+        playerGlow = currentWaveConfig.playerGlowOnStart || 50;
+        createExplosion(playerDrawX, playerDrawY, 55, '#00ffff', 2.0);
+        createExplosion(playerDrawX, playerDrawY, 35, '#ffffff', 1.4);
+        createFloatingText(playerDrawX, playerDrawY - 65, `GRID: ${GRID_SIZE}!`, false, false);
+        playLevelComplete();
+        zones = [];
+        zoneTimers = {};
+        zoneScoreAccumulator = 0;
+        evadedSinceLastDoubleBonus = 0;
+        scoreSinceLastDoubleBonus = 0;
+        premiumCollectedSinceLastTripleBonus = 0;
+        bossesEvadedSinceLastTripleBonus = 0;
+        updateUI();
+        generatePowerUps();
+        updateWeatherSchedule(wave);
+        if (WAVE_EVENTS[wave]) timers.add(() => triggerWaveEvent(wave), 1000);
+        // tienda 25% de probabilidad
+        if (Math.random() < 0.25) { openShop(); }
+        saveGame();
+      }
+      
+      // ═══════════════════════════════════════
+      // TIENDA
+      // ═══════════════════════════════════════
+      function openShop() {
+        paused = true;
+        shopOpen = true;
+      }
+      
+      function drawShop() {
+    ctx.fillStyle = 'rgba(0,0,0,0.88)';
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    ctx.fillStyle = '#ffdd00';
+    ctx.font = '12px "Press Start 2P",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('TIENDA', CANVAS_SIZE / 2, 50);
+
+    const items = [
+        { name: 'Escudo', cost: 200, action: () => { activeEffects.push({ type: 'shield', expires: Date.now() + 10000 }); } },
+        { name: 'Velocidad', cost: 150, action: () => { applyNewPowerUpEffect('speed', true); } },
+        { name: 'Revivir', cost: 400, action: () => { hasReviveTotem = true; } },
+        { name: 'x2 Puntos', cost: 300, action: () => { applyNewPowerUpEffect('doubleScore', true); } },
+    ];
+
+    window._shopItems = items; // guardamos para el manejador de clic
+
+    items.forEach((item, i) => {
+        const y = 100 + i * 55;
+        const inStock = score >= item.cost;
+        ctx.fillStyle = inStock ? '#ffcc00' : '#555';
+        ctx.font = '9px "Press Start 2P",monospace';
+        ctx.fillText(`${item.name} - ${item.cost} pts`, CANVAS_SIZE / 2, y);
+
+        // Dibujar rectángulo táctil invisible (solo para referencia)
+        const btnRect = { x: CANVAS_SIZE / 2 - 100, y: y - 20, w: 200, h: 45 };
+        item.rect = btnRect; // almacenamos para detección
+
+        if (inStock) {
+            ctx.fillStyle = '#88ff88';
+            ctx.font = '7px "Press Start 2P",monospace';
+            ctx.fillText('[TOCA]', CANVAS_SIZE / 2, y + 18);
+        }
+    });
+
+    // Botón cerrar
+    ctx.fillStyle = '#aaa';
+    ctx.font = '8px "Press Start 2P",monospace';
+    ctx.fillText('[X] Cerrar', CANVAS_SIZE / 2, CANVAS_SIZE - 30);
+    window._shopCloseRect = { x: CANVAS_SIZE / 2 - 50, y: CANVAS_SIZE - 45, w: 100, h: 25 };
+}
+      
+      // ═══════════════════════════════════════
+      // PAUSA - OVERLAY DE LOGROS
+      // ═══════════════════════════════════════
+      function drawPauseOverlay() {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px "Press Start 2P",monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('PAUSA', CANVAS_SIZE / 2, 40);
+        const visAchs = ACHIEVEMENTS.filter(a => !a.hidden || unlockedAchievements[a.id]).slice(pauseAchPage * 5, pauseAchPage * 5 + 5);
+        visAchs.forEach((ach, i) => {
+          const y = 75 + i * 52;
+          const unlocked = !!unlockedAchievements[ach.id];
+          ctx.fillStyle = unlocked ? '#ffcc00' : '#666688';
+          ctx.font = '7px "Press Start 2P",monospace';
+          ctx.fillText(`${ach.icon} ${ach.name}`, CANVAS_SIZE / 2, y);
+          const prog = ach.progress ? (() => { try { return ach.progress(); } catch (e) { return 0; } })() : (unlocked ? 1 : 0);
+          ctx.fillStyle = '#333355';
+          ctx.fillRect(CANVAS_SIZE / 2 - 80, y + 9, 160, 6);
+          ctx.fillStyle = unlocked ? '#ffcc00' : '#4444aa';
+          ctx.fillRect(CANVAS_SIZE / 2 - 80, y + 9, 160 * Math.min(1, prog), 6);
+          if (unlocked) {
+            ctx.fillStyle = '#ffcc00';
+            ctx.font = '6px "Press Start 2P",monospace';
+            ctx.fillText('✓', CANVAS_SIZE / 2 + 85, y);
+          }
+        });
+        ctx.fillStyle = '#888888';
+        ctx.font = '6px "Press Start 2P",monospace';
+        ctx.fillText('↑↓ navegar  |  P despausa', CANVAS_SIZE / 2, CANVAS_SIZE - 20);
+      }
+      
+      // ═══════════════════════════════════════
+      // DEBUG OVERLAY
+      // ═══════════════════════════════════════
+      function drawDebugOverlay() {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 0, 200, 120);
+        ctx.fillStyle = '#00ff00';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'left';
+        const fps = Math.round(1000 / ((performance.now() - lastTime + 0.001)));
+        ctx.fillText(`FPS: ${fps}`, 5, 15);
+        ctx.fillText(`Enemigos: ${enemies.length}`, 5, 27);
+        ctx.fillText(`Zonas: ${zones.length}`, 5, 39);
+        ctx.fillText(`Efectos: ${activeEffects.length}`, 5, 51);
+        ctx.fillText(`Timers: ${timers.timers.length}`, 5, 63);
+        ctx.fillText(`Clima: ${currentWeather?.name||'ninguno'}`, 5, 75);
+        ctx.fillText(`GRID: ${GRID_SIZE} CELL: ${CELL_SIZE.toFixed(1)}`, 5, 87);
+        ctx.fillText(`PU onMap: ${powerUpsOnMap.length}`, 5, 99);
+        ctx.restore();
+      }
+      // ═══════════════════════════════════════
+      // MOVIMIENTO
+      // ═══════════════════════════════════════
+      let wasInSafeZone = false;
+      function executeMove(dir) {
+        if (controlsInverted) {
+          const inv = { up: 'down', down: 'up', left: 'right', right: 'left', 'up-left': 'down-right', 'up-right': 'down-left', 'down-left': 'up-right', 'down-right': 'up-left' };
+          dir = inv[dir] || dir;
+        }
+        let newX = player.x,
+          newY = player.y;
+        switch (dir) {
+          case 'up':
+            newY--;
+            break;
+          case 'down':
+            newY++;
+            break;
+          case 'left':
+            newX--;
+            break;
+          case 'right':
+            newX++;
+            break;
+          case 'up-left':
+            newX--;
+            newY--;
+            break;
+          case 'up-right':
+            newX++;
+            newY--;
+            break;
+          case 'down-left':
+            newX--;
+            newY++;
+            break;
+          case 'down-right':
+            newX++;
+            newY++;
+            break;
+        }
+        if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE) return false;
+        moving = true;
+        const startX = playerDrawX,
+          startY = playerDrawY;
+        const endX = newX * CELL_SIZE + CELL_SIZE / 2,
+          endY = newY * CELL_SIZE + CELL_SIZE / 2;
+        player.x = newX;
+        player.y = newY;
+        const speedActive = activeEffects.some(e => e.type === 'speed') || isInSpeedZone();
+        const spMult = player.speedMultiplier || 1;
+        let duration = Math.max(MIN_MOVE_DELAY, speedActive ? currentMoveDelay / (spMult * 2) : currentMoveDelay / spMult);
+        const animStart = performance.now();
+        
+        function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+        
+        function animateMove(now) {
+          const elapsed = now - animStart,
+            t = Math.min(1, elapsed / duration),
+            ease = easeInOutCubic(t);
+          playerDrawX = startX + (endX - startX) * ease;
+          playerDrawY = startY + (endY - startY) * ease;
+          if (t < 1) requestAnimationFrame(animateMove);
+          else {
+            playerDrawX = endX;
+            playerDrawY = endY;
+            moving = false;
+            lastMoveTimestamp = performance.now();
+            if (currentMoveDelay > MIN_MOVE_DELAY) currentMoveDelay = Math.max(MIN_MOVE_DELAY, currentMoveDelay * 0.9);
+            startNextMoveStep();
+          }
+        }
+        requestAnimationFrame(animateMove);
+        playMoveSound();
+        const tiltMap = { up: [-0.3, 0], down: [0.3, 0], left: [0, -0.4], right: [0, 0.4], 'up-left': [-0.2, -0.3], 'up-right': [-0.2, 0.3], 'down-left': [0.2, -0.3], 'down-right': [0.2, 0.3] };
+        const [tx, tz] = tiltMap[dir] || [0, 0];
+        targetTiltX = tx;
+        targetTiltZ = tz;
+        setTimeout(() => {
+          targetTiltX = 0;
+          targetTiltZ = 0;
+        }, 200);
+        if (rotationResetTimer) clearTimeout(rotationResetTimer);
+        const rotMap = { up: 'rotateX(48deg)', down: 'rotateX(35deg)', left: 'rotateX(40deg) rotateY(-8deg)', right: 'rotateX(40deg) rotateY(8deg)', 'up-left': 'rotateX(46deg) rotateY(-7deg)', 'up-right': 'rotateX(46deg) rotateY(7deg)', 'down-left': 'rotateX(37deg) rotateY(-7deg)', 'down-right': 'rotateX(37deg) rotateY(7deg)' };
+        canvas.style.transform = rotMap[dir] || 'rotateX(40deg)';
+        rotationResetTimer = setTimeout(() => { canvas.style.transform = 'rotateX(40deg)'; }, 200);
+        const angleMap = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2, 'up-right': Math.PI / 4, 'up-left': -Math.PI / 4, 'down-right': 3 * Math.PI / 4, 'down-left': -3 * Math.PI / 4 };
+        targetAngle = angleMap[dir] || 0;
+        const backAngleMap = { up: Math.PI / 2, down: -Math.PI / 2, left: 0, right: Math.PI, 'up-right': -3 * Math.PI / 4, 'up-left': 3 * Math.PI / 4, 'down-right': -Math.PI / 4, 'down-left': Math.PI / 4 };
+        const backAngle = backAngleMap[dir] || 0;
+        for (let i = 0; i < 6; i++) { createSpark(playerDrawX + (Math.random() - 0.5) * 12, playerDrawY + (Math.random() - 0.5) * 12, backAngle + (Math.random() - 0.5) * 0.8); }
+        // sonido safe zone
+        const nowInSafe = isInSafeZone();
+        if (nowInSafe && !wasInSafeZone) {
+          playSafeZoneEnter();
+          createExplosion(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2, 20, '#00ffcc', 1.2);
+        }
+        wasInSafeZone = nowInSafe;
+        checkCollectibles();
+        return true;
+      }
+      
+      
+      function startNextMoveStep() {
+        if (moving || gameOver) return;
+        const nextDir = pendingDirection || currentDirection;
+        if (!nextDir) return;
+        pendingDirection = null;
+        if (currentDirection !== nextDir) currentMoveDelay = 110;
+        currentDirection = nextDir;
+        executeMove(currentDirection);
+      }
+      
+      function startMove(dir) {
+        if (gameOver) { resetGame(); return; }
+        if (moving) { pendingDirection = dir; return; }
+        if (currentDirection !== dir) currentMoveDelay = 110;
+        currentDirection = dir;
+        executeMove(dir);
+      }
+      
+      function cancelCurrentMovement() {
+        if (moving) pendingDirection = null;
+        currentDirection = null;
+        pendingDirection = null;
+        currentMoveDelay = 110;
+      }
+      
+      // ═══════════════════════════════════════
+      // RESET
+      // ═══════════════════════════════════════
+      function resetGame() {
+        localStorage.removeItem('odparSave');
+        gameOver = false;
+        powerUpsOnMap = [];
+        activeEffects = [];
+        hasReviveTotem = false;
+        invulnerableUntil = 0;
+        revivesUsedThisGame = 0;
+        timers.clearAll();
+        cancelCurrentMovement();
+        GRID_SIZE = INITIAL_GRID_SIZE;
+        wave = 1;
+        evadedThisWave = 0;
+        comboCount = 0;
+        currentWaveConfig = getMessageConfig(1);
+        currentWaveMessage = currentWaveConfig.text;
+        MESSAGE_CONFIG._fallbackIndex = 0;
+        safeZoneDisabledForWave = false;
+        doublePointsActive = false;
+        POWERUP_CONFIG.spawnCount = 3;
+        zones = [];
+        zoneTimers = {};
+        zoneScoreAccumulator = 0;
+        evadedSinceLastDoubleBonus = 0;
+        scoreSinceLastDoubleBonus = 0;
+        premiumCollectedSinceLastTripleBonus = 0;
+        bossesEvadedSinceLastTripleBonus = 0;
+        score = 0;
+        lastBossTime = Date.now();
+        premiumFlash = 0;
+        playerGlow = 0;
+        waveStartTime = Date.now();
+        resizeGameElements();
+        moving = false;
+        pendingDirection = null;
+        floatingTexts = [];
+        nextNormalSpawnTime = Date.now() + 3000;
+        currentDirection = null;
+        targetAngle = 0;
+        currentPlayerAngle = 0;
+        targetTiltX = 0;
+        currentTiltX = 0;
+        targetTiltZ = 0;
+        currentTiltZ = 0;
+        currentMoveDelay = 150;
+        lastHumTime = 0;
+        applyWeather('none');
+        playerInventory = [];
+        chainMultiplier = 1;
+        lastPowerUpTime = 0;
+        window.decoys = [];
+        WaveStateMachine.current = 'idle';
+        WaveStateMachine.schedule = null;
+        player.damageMultiplier = 1;
+        player.phaseActive = false;
+        player.blackHoleActive = false;
+        player.speedMultiplier = 1;
+        updateDifficulty();
+        updateUI();
+        canvas.style.transform = 'rotateX(40deg)';
+        shopOpen = false;
+        paused = false;
+        wasInSafeZone = false;
+      }
+      
+      // ═══════════════════════════════════════
+      // GAME LOOP
+      // ═══════════════════════════════════════
+      let lastTime = performance.now(),
+        nextNormalSpawnTime = Date.now() + 4000;
+      
+      function updateActiveEffectsTimers(dt) {
+        const now = Date.now();
+        for (let i = activeEffects.length - 1; i >= 0; i--) {
+          const ef = activeEffects[i];
+          if (ef.expires > 0 && now >= ef.expires) {
+            if (ef.type === 'freeze') enemies.forEach(e => { e.frozen = false; });
+            if (ef.type === 'phase') player.phaseActive = false;
+            if (ef.type === 'berserk') player.damageMultiplier = 1;
+            if (ef.type === 'timeSlow') enemies.forEach(e => { e.slowApplied = false; });
+            activeEffects.splice(i, 1);
+          }
+        }
+      }
+      
+      function spawnEnemyWave(nowMs) {
+        const cfg = enemySpawnConfig.normal;
+        const count = cfg.baseCount + Math.floor(Math.random() * (cfg.countVariance + 1));
+        for (let i = 0; i < count; i++) {
+          const dirs = ['down', 'up', 'left', 'right'];
+          spawnEnemy('grunt', dirs[Math.floor(Math.random() * 4)]);
+        }
+        const interval = cfg.minInterval + Math.random() * (cfg.maxInterval - cfg.minInterval);
+        nextNormalSpawnTime = nowMs + interval;
+      }
+      
+      function gameLoop(now) {
+        const dt = Math.min(0.1, (now - lastTime) / 1000);
+        lastTime = now;
+        if (paused && !shopOpen) {
+          draw();
+          requestAnimationFrame(gameLoop);
+          return;
+        }
+        if (!gameOver) {
+          for (let i = enemies.length - 1; i >= 0; i--) {
+            enemies[i].update(dt);
+            if (enemies[i].isOffScreen()) {
+              evadedThisWave++;
+              evadedSinceLastDoubleBonus++;
+              totalEnemiesEvaded++;
+              if (enemies[i].boss) bossesEvadedSinceLastTripleBonus++;
+              updateUI();
+              enemies.splice(i, 1);
+            }
+          }
+          checkEnemyCollision();
+          updateZones(dt);
+          updateWeather(dt);
+          updateActiveEffectsTimers(dt);
+          timers.update(dt);
+          const nowMs = Date.now();
+          if (isInSafeZone() && nowMs - lastHumTime > 2100 && Math.random() < 0.3) {
+            playSafeZoneHum();
+            lastHumTime = nowMs;
+          }
+          if (WaveStateMachine.current === 'DYNAMIC' && nowMs >= nextNormalSpawnTime && !gameOver) { spawnEnemyWave(nowMs); }
+          if (nowMs - lastBossTime > enemySpawnConfig.boss.interval && !gameOver) {
+            if (Math.random() < 0.7) triggerBossWave();
+            else lastBossTime = nowMs;
+          }
+          if (window.decoys?.length > 0) window.decoys = window.decoys.filter(d => d.expires > nowMs);
+        }
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+      
+      // ═══════════════════════════════════════
+      // DRAW PRINCIPAL
+      // ═══════════════════════════════════════
+      function draw() {
+        // fondo
+        const grad = ctx.createRadialGradient(CANVAS_SIZE / 2, CANVAS_SIZE / 2, 80, CANVAS_SIZE / 2, CANVAS_SIZE / 2, CANVAS_SIZE / 1.5);
+        grad.addColorStop(0, '#0a1428');
+        grad.addColorStop(1, '#03060c');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        // flash premium
+        if (premiumFlash > 0) {
+          ctx.fillStyle = `rgba(255,0,255,${Math.min(0.35,premiumFlash/45)})`;
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+          premiumFlash--;
+        }
+        // cuadrícula
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= GRID_SIZE; i++) {
+          const pos = i * CELL_SIZE;
+          ctx.beginPath();
+          ctx.moveTo(pos, 0);
+          ctx.lineTo(pos, CANVAS_SIZE);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, pos);
+          ctx.lineTo(CANVAS_SIZE, pos);
+          ctx.stroke();
+        }
+        ctx.restore();
+        // fog of war
+        if (fogOfWarActive) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          for (let x = 0; x < GRID_SIZE; x++)
+            for (let y = 0; y < GRID_SIZE; y++) {
+              const hasCell = collectibles.some(c => c.x === x && c.y === y) || messageCollectibles.some(c => c.x === x && c.y === y);
+              if (!hasCell) ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+          ctx.restore();
+        }
+        // zonas
+        drawZones();
+        // coleccionables normales
+        for (let c of collectibles) {
+          const px = c.x * CELL_SIZE + CELL_SIZE / 2,
+            py = c.y * CELL_SIZE + CELL_SIZE / 2;
+          ctx.fillStyle = '#ffcc33';
+          ctx.beginPath();
+          ctx.arc(px, py, CELL_SIZE * 0.33, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // celdas de mensaje
+        drawMessageCollectibles();
+        // power-ups
+        drawPowerUpsOnMap();
+        // enemigos
+        for (let e of enemies) e.draw();
+        drawWallAlerts();
+        // partículas
+        particlePool.updateAndDraw(ctx);
+        // jugador
+        drawPlayer();
+        drawActiveEffectsHUD();
+        drawInventoryHUD();
+        // floating texts
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+          floatingTexts[i].update();
+          floatingTexts[i].draw();
+          if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+        }
+        // glitch
+        if (!moving) {
+          drawGlitchEffect();
+          playerDrawX = player.x * CELL_SIZE + CELL_SIZE / 2;
+          playerDrawY = player.y * CELL_SIZE + CELL_SIZE / 2;
+        }
+        // clima
+        drawWeather();
+        // game over
+        if (gameOver) {
+          ctx.fillStyle = 'rgba(0,0,0,0.88)';
+          ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#ff4444';
+          ctx.font = '16px "Press Start 2P",monospace';
+          ctx.fillText('GAME OVER', CANVAS_SIZE / 2, 70);
+          ctx.fillStyle = '#ffcc00';
+          ctx.font = '10px "Press Start 2P",monospace';
+          ctx.fillText(`SCORE: ${score}`, CANVAS_SIZE / 2, 110);
+          ctx.fillText(`HI: ${highScore}`, CANVAS_SIZE / 2, 130);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '7px "Press Start 2P",monospace';
+          ctx.fillText(`Oleada: ${wave}`, CANVAS_SIZE / 2, 158);
+          ctx.fillText(`Esquivados: ${totalEnemiesEvaded}`, CANVAS_SIZE / 2, 174);
+          ctx.fillText(`PU usados: ${totalPowerUpsUsed}`, CANVAS_SIZE / 2, 190);
+          ctx.fillText(`Combo max: ${maxCombo}`, CANVAS_SIZE / 2, 206);
+          ctx.fillText(`Jefes: ${totalBossesDefeated}`, CANVAS_SIZE / 2, 222);
+          ctx.fillStyle = '#223366';
+          ctx.fillRect(CANVAS_SIZE / 2 - 60, CANVAS_SIZE - 62, 120, 36);
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(CANVAS_SIZE / 2 - 60, CANVAS_SIZE - 62, 120, 36);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '8px "Press Start 2P",monospace';
+          ctx.fillText('REINICIAR', CANVAS_SIZE / 2, CANVAS_SIZE - 39);
+        }
+        if (shopOpen) drawShop();
+        if (paused && !shopOpen) drawPauseOverlay();
+        if (debugMode) drawDebugOverlay();
+      }
+      
+      // ═══════════════════════════════════════
+      // BOTONES
+      // ═══════════════════════════════════════
+      function createBtn(svg) {
+        const b = document.createElement('div');
+        b.className = 'boton';
+        b.innerHTML = svg;
+        return b;
+      }
+      
+      function createEmptyBtn() {
+        const b = document.createElement('div');
+        b.className = 'boton vacio';
+        return b;
+      }
+      const svgUp = `<svg viewBox="0 0 24 24"><path d="M12 5l7 8h-4v6h-6v-6H5l7-8z"/></svg>`;
+      const svgDown = `<svg viewBox="0 0 24 24"><path d="M12 19l-7-8h4V5h6v6h4l-7 8z"/></svg>`;
+      const svgLeft = `<svg viewBox="0 0 24 24"><path d="M5 12l8-7v4h6v6h-6v4l-8-7z"/></svg>`;
+      const svgRight = `<svg viewBox="0 0 24 24"><path d="M19 12l-8 7v-4H5v-6h6V5l8 7z"/></svg>`;
+      const svgUL = `<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 6v8M6 6h8" stroke="#bbffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const svgUR = `<svg viewBox="0 0 24 24"><path d="M18 6L6 18M18 6v8M18 6h-8" stroke="#bbffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const svgDL = `<svg viewBox="0 0 24 24"><path d="M6 18l12-12M6 18v-8M6 18h8" stroke="#bbffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const svgDR = `<svg viewBox="0 0 24 24"><path d="M18 18L6 6M18 18v-8M18 18h-8" stroke="#bbffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      
+      const upLeftBtn = createBtn(svgUL),
+        upBtn = createBtn(svgUp),
+        upRightBtn = createBtn(svgUR);
+      const leftBtn = createBtn(svgLeft),
+        centerEmpty = createEmptyBtn(),
+        rightBtn = createBtn(svgRight);
+      const downLeftBtn = createBtn(svgDL),
+        downBtn = createBtn(svgDown),
+        downRightBtn = createBtn(svgDR);
+      const centerbotones = document.getElementById('centerbotones');
+      centerbotones.innerHTML = '';
+      const f1 = document.createElement('section');
+      f1.className = 'fila-botones';
+      f1.appendChild(upLeftBtn);
+      f1.appendChild(upBtn);
+      f1.appendChild(upRightBtn);
+      const f2 = document.createElement('section');
+      f2.className = 'fila-botones';
+      f2.appendChild(leftBtn);
+      f2.appendChild(centerEmpty);
+      f2.appendChild(rightBtn);
+      const f3 = document.createElement('section');
+      f3.className = 'fila-botones';
+      f3.appendChild(downLeftBtn);
+      f3.appendChild(downBtn);
+      f3.appendChild(downRightBtn);
+      centerbotones.appendChild(f1);
+      centerbotones.appendChild(f2);
+      centerbotones.appendChild(f3);
+      
+      const buttonMap = new Map([
+        [upLeftBtn, 'up-left'],
+        [upBtn, 'up'],
+        [upRightBtn, 'up-right'],
+        [leftBtn, 'left'],
+        [rightBtn, 'right'],
+        [downLeftBtn, 'down-left'],
+        [downBtn, 'down'],
+        [downRightBtn, 'down-right']
+      ]);
+      let currentActiveBtn = null;
+      
+      function activateButton(btn, dir) {
+        if (currentActiveBtn === btn) return;
+        if (currentActiveBtn) currentActiveBtn.classList.remove('activo');
+        currentActiveBtn = btn;
+        startMove(dir);
+        btn.classList.add('activo');
+      }
+      
+      function deactivateAll() {
+        if (currentActiveBtn) currentActiveBtn.classList.remove('activo');
+        currentActiveBtn = null;
+        cancelCurrentMovement();
+      }
+      
+      function getButtonAt(x, y) { const el = document.elementFromPoint(x, y); for (let [btn, dir] of buttonMap) { if (btn.contains(el) || el === btn) return { btn, dir }; } return null; }
+      
+      function handleStart(x, y) { const d = getButtonAt(x, y); if (d) activateButton(d.btn, d.dir); }
+      
+      function handleMove(x, y) {
+        const d = getButtonAt(x, y);
+        if (d) activateButton(d.btn, d.dir);
+        else deactivateAll();
+      }
+      
+function handleShopClick(clientX, clientY) {
+    if (!shopOpen) return false;
+
+    // Convertir coordenadas de la ventana a coordenadas del canvas
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = CANVAS_SIZE / rect.width;   // canvas.width físico (560)
+    const scaleY = CANVAS_SIZE / rect.height;
+    const canvasX = (clientX - rect.left) * scaleX;
+    const canvasY = (clientY - rect.top) * scaleY;
+
+    // Verificar botón cerrar
+    const closeRect = window._shopCloseRect;
+    if (closeRect && canvasX >= closeRect.x && canvasX <= closeRect.x + closeRect.w &&
+        canvasY >= closeRect.y && canvasY <= closeRect.y + closeRect.h) {
+        shopOpen = false;
+        paused = false;
+        return true;
+    }
+
+    // Verificar artículos
+    const items = window._shopItems || [];
+    for (let item of items) {
+        if (item.rect && canvasX >= item.rect.x && canvasX <= item.rect.x + item.rect.w &&
+            canvasY >= item.rect.y && canvasY <= item.rect.y + item.rect.h) {
+            if (score >= item.cost) {
+                score -= item.cost;
+                item.action();
+                updateUI();
+                audioManager.playSfx(600, 80, 'triangle', 0.5);
+            }
+            return true;
+        }
+    }
+    return false; // Si no tocó nada, no hacemos nada (no cerramos)
+}
+
+// Modificar los event listeners existentes:
+document.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (shopOpen) {
+        if (e.touches.length > 0 && handleShopClick(e.touches[0].clientX, e.touches[0].clientY)) return;
+    } else if (e.touches.length > 0) {
+        handleStart(e.touches[e.touches.length - 1].clientX, e.touches[e.touches.length - 1].clientY);
+    }
+}, { passive: false });
+
+document.addEventListener('mousedown', e => {
+    if (shopOpen) {
+        if (handleShopClick(e.clientX, e.clientY)) return;
+    } else {
+        handleStart(e.clientX, e.clientY);
+    }
+});
+      document.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches.length > 0) handleMove(e.touches[e.touches.length - 1].clientX, e.touches[e.touches.length - 1].clientY); }, { passive: false });
+      document.addEventListener('touchend', e => {
+        if (e.touches.length === 0) deactivateAll();
+        else handleStart(e.touches[e.touches.length - 1].clientX, e.touches[e.touches.length - 1].clientY);
+      });
+      document.addEventListener('touchcancel', deactivateAll);
+      
+      document.addEventListener('mousemove', e => { if (e.buttons > 0) handleMove(e.clientX, e.clientY); });
+      document.addEventListener('mouseup', deactivateAll);
+      
+      document.addEventListener('keydown', e => {
+        audioManager.resume();
+        // tienda
+        if (shopOpen) {
+          if (e.key === 'Enter' && window._shopItems) {
+            const it = window._shopItems[0];
+            if (it && score >= it.cost) {
+              score -= it.cost;
+              it.effect();
+              updateUI();
+            }
+          }
+          if (e.key === 'Escape') {
+            shopOpen = false;
+            paused = false;
+            window._shopItems = null;
+          }
+          return;
+        }
+        // pausa
+        if (e.key === 'p' || e.key === 'P') { if (!gameOver) { paused = !paused; } return; }
+        if (paused) {
+          if (e.key === 'ArrowUp') { pauseAchPage = Math.max(0, pauseAchPage - 1); return; }
+          if (e.key === 'ArrowDown') { pauseAchPage++; return; }
+          if (e.key === 'Enter') { paused = false; return; }
+          return;
+        }
+        // inventario
+        if (e.key === ' ' && !gameOver && playerInventory.length > 0) {
+          const pu = playerInventory.shift();
+          activateInventoryPowerUp(pu);
+          return;
+        }
+        // debug
+        if (e.key === 'F1') { debugMode = !debugMode; return; }
+        if (debugMode) {
+          if (e.key === 'F2') { spawnEnemy('boss', 'down'); return; }
+          if (e.key === 'F3') {
+            const ws = Object.keys(WEATHER_TYPES);
+            applyWeather(ws[Math.floor(Math.random() * ws.length)]);
+            return;
+          }
+          if (e.key === 'F4') {
+            score += 1000;
+            updateUI();
+            return;
+          }
+          if (e.key === 'F5') { activeEffects.push({ type: 'shield', expires: Date.now() + 10000 }); return; }
+        }
+        if (gameOver) { resetGame(); return; }
+        switch (e.key.toLowerCase()) {
+          case 'arrowup':
+          case 'w':
+            startMove('up');
+            break;
+          case 'arrowdown':
+          case 's':
+            startMove('down');
+            break;
+          case 'arrowleft':
+          case 'a':
+            startMove('left');
+            break;
+          case 'arrowright':
+          case 'd':
+            startMove('right');
+            break;
+          case 'q':
+            startMove('up-left');
+            break;
+          case 'e':
+            startMove('up-right');
+            break;
+          case 'z':
+            startMove('down-left');
+            break;
+          case 'c':
+            startMove('down-right');
+            break;
+        }
+      });
+      
+      // Gamepad
+      function pollGamepad() {
+        const gp = navigator.getGamepads?.()[0];
+        if (gp && !gameOver && !paused && !shopOpen) {
+          if (gp.axes[0] < -0.5) startMove('left');
+          if (gp.axes[0] > 0.5) startMove('right');
+          if (gp.axes[1] < -0.5) startMove('up');
+          if (gp.axes[1] > 0.5) startMove('down');
+          if (gp.buttons[0]?.pressed && playerInventory.length > 0) {
+            const pu = playerInventory.shift();
+            activateInventoryPowerUp(pu);
+          }
+          if (gp.buttons[9]?.pressed && !gameOver) paused = !paused;
+        }
+      }
+      // Botón flotante para usar inventario (móvil)
+const invBtn = document.createElement('div');
+invBtn.style.cssText = 'position:absolute; bottom:20px; right:20px; width:48px; height:48px; background:#ffaa00; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:20px; font-weight:bold; z-index:100; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.5);';
+invBtn.textContent = '⚡';
+document.body.appendChild(invBtn);
+
+invBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (!gameOver && playerInventory.length > 0) {
+    const pu = playerInventory.shift();
+    activateInventoryPowerUp(pu);
+  }
+});
+invBtn.addEventListener('mousedown', (e) => {
+  if (!gameOver && playerInventory.length > 0) {
+    const pu = playerInventory.shift();
+    activateInventoryPowerUp(pu);
+  }
+});
+      
+      // ═══════════════════════════════════════
+      // INICIO
+      // ═══════════════════════════════════════
+      currentWaveConfig = getMessageConfig(1);
+      currentWaveMessage = currentWaveConfig.text;
+      let loaded = false;
+      try { loaded = loadGame(); } catch (e) {}
+      if (!loaded) {
+        resetGame();
+      } else {
+        WaveStateMachine.start(wave);
+        generateCollectibles();
+        updateUI();
+      }
+      updateDifficulty();
+      requestAnimationFrame(gameLoop);
+      setInterval(pollGamepad, 50);
+      
+      console.log('%cODPAR PREMIUM v4.0 ULTIMATE', 'color:#FFD700;font-size:20px;font-weight:bold');
+      console.log('%c9 Climas | 9 Enemigos | 9 Zonas | 22 Power-ups | 25 Logros | Audio Manager | Timer Manager | Particle Pool | Delta Time | Guardado v4', 'color:#00ffcc;font-size:11px');
+      console.log('Debug: P para pausa, F1 para debug overlay');
+    })();
+  </script>
+</body>
+
+</html>
