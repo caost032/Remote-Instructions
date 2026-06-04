@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "title": "La Palabra Viva",
+    "subtitle": "Pasajes esenciales para el corazón",
+    "author": "Sagrada Escritura",
+    "lang": "es",
+    "version": "1.0",
+    "icon": "✝"
+  },
+  "config": {
+    "defaultTheme": "ink-parchment",
+    "startAt": 0,
+    "ttsLang": "es-ES",
+    "storageKey": "biblia-nv8",
+    "exportTitle": "palabra-viva"
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "type": "cover",
+      "eyebrow": "Lectura inmersiva",
+      "title": "La <em>Palabra</em> que transforma",
+      "subtitle": "Pasajes seleccionados para meditar, escuchar y vivir",
+      "hint": "Presiona <kbd>→</kbd> o desliza para avanzar · Activa la voz con <kbd>L</kbd>"
+    },
+    {
+      "id": "genesis",
+      "type": "section",
+      "number": "I",
+      "title": "En el principio, Dios",
+      "blocks": [
+        {
+          "text": "En el principio creó Dios los cielos y la tierra. Y la tierra estaba desordenada y vacía, y las tinieblas estaban sobre la faz del abismo, y el Espíritu de Dios se movía sobre la faz de las aguas.",
+          "style": "oracle"
+        },
+        {
+          "text": "Y dijo Dios: Sea la luz; y fue la luz. Y vio Dios que la luz era buena; y separó Dios la luz de las tinieblas. Y llamó Dios a la luz Día, y a las tinieblas llamó Noche. Y fue la tarde y la mañana un día.",
+          "style": "epiphany"
+        },
+        {
+          "text": "Todo fue hecho por medio de la Palabra, y sin ella nada de lo que ha sido hecho fue hecho. (Juan 1:3)",
+          "style": "echo"
+        }
+      ]
+    },
+    {
+      "id": "exodo",
+      "type": "section",
+      "number": "II",
+      "title": "El Dios que libera",
+      "blocks": [
+        {
+          "text": "Jehová peleará por vosotros, y vosotros estaréis tranquilos.",
+          "style": "manifesto"
+        },
+        {
+          "text": "No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo; siempre te ayudaré, siempre te sustentaré con la diestra de mi justicia.",
+          "style": "emphasis"
+        },
+        {
+          "text": "El Señor es mi fortaleza y mi cántico, y ha sido mi salvación.",
+          "style": "reflection"
+        }
+      ]
+    },
+    {
+      "id": "salmos",
+      "type": "section",
+      "number": "III",
+      "title": "El Pastor de mi alma",
+      "blocks": [
+        {
+          "text": "Jehová es mi pastor; nada me faltará. En lugares de delicados pastos me hará descansar; junto a aguas de reposo me pastoreará. Confortará mi alma; me guiará por sendas de justicia por amor de su nombre.",
+          "style": "benediction"
+        },
+        {
+          "text": "Aunque ande en valle de sombra de muerte, no temeré mal alguno, porque tú estarás conmigo; tu vara y tu cayado me infundirán aliento.",
+          "style": "whisper"
+        },
+        {
+          "text": "Ciertamente el bien y la misericordia me seguirán todos los días de mi vida, y en la casa de Jehová moraré por largos días.",
+          "style": "incantation"
+        }
+      ]
+    },
+    {
+      "id": "profetas",
+      "type": "section",
+      "number": "IV",
+      "title": "Esperanza en medio del polvo",
+      "blocks": [
+        {
+          "text": "Los que esperan a Jehová tendrán nuevas fuerzas; levantarán alas como las águilas; correrán y no se cansarán, caminarán y no se fatigarán.",
+          "style": "oracle"
+        },
+        {
+          "text": "Porque como desciende la lluvia y la nieve de los cielos, y no vuelve allá, sino que riega la tierra, y la hace germinar y producir, y da semilla al que siembra y pan al que come, así será mi palabra que sale de mi boca; no volverá a mí vacía, sino que hará lo que yo quiero, y será prosperada en aquello para que la envié.",
+          "style": "codex"
+        },
+        {
+          "text": "He aquí vienen días, dice Jehová, en que haré nuevo pacto con la casa de Israel y con la casa de Judá. Pondré mi ley en su mente y la escribiré en su corazón; y yo seré a ellos por Dios, y ellos me serán por pueblo.",
+          "style": "epiphany"
+        }
+      ]
+    },
+    {
+      "id": "evangelios",
+      "type": "section",
+      "number": "V",
+      "title": "Las bienaventuranzas",
+      "blocks": [
+        {
+          "text": "Bienaventurados los pobres en espíritu, porque de ellos es el reino de los cielos. Bienaventurados los que lloran, porque ellos recibirán consolación. Bienaventurados los mansos, porque ellos recibirán la tierra por heredad.",
+          "style": "benediction"
+        },
+        {
+          "text": "Bienaventurados los que tienen hambre y sed de justicia, porque ellos serán saciados. Bienaventurados los misericordiosos, porque ellos alcanzarán misericordia. Bienaventurados los de limpio corazón, porque ellos verán a Dios.",
+          "style": "reflection"
+        },
+        {
+          "text": "Bienaventurados los que trabajan por la paz, porque ellos serán llamados hijos de Dios. Bienaventurados los que padecen persecución por causa de la justicia, porque de ellos es el reino de los cielos.",
+          "style": "manifesto"
+        }
+      ]
+    },
+    {
+      "id": "juan",
+      "type": "section",
+      "number": "VI",
+      "title": "El Verbo hecho carne",
+      "blocks": [
+        {
+          "text": "En el principio era el Verbo, y el Verbo era con Dios, y el Verbo era Dios. Este era en el principio con Dios. Todas las cosas por él fueron hechas, y sin él nada de lo que ha sido hecho fue hecho.",
+          "style": "oracle"
+        },
+        {
+          "text": "En él estaba la vida, y la vida era la luz de los hombres. La luz en las tinieblas resplandece, y las tinieblas no prevalecieron contra ella.",
+          "style": "epiphany"
+        },
+        {
+          "text": "Y aquel Verbo fue hecho carne, y habitó entre nosotros (y vimos su gloria, gloria como del unigénito del Padre), lleno de gracia y de verdad.",
+          "style": "incantation"
+        }
+      ]
+    },
+    {
+      "id": "romanos",
+      "type": "section",
+      "number": "VII",
+      "title": "Nada nos separará",
+      "blocks": [
+        {
+          "text": "¿Quién nos separará del amor de Cristo? ¿Tribulación, angustia, persecución, hambre, desnudez, peligro, espada? Antes, en todas estas cosas somos más que vencedores por medio de aquel que nos amó.",
+          "style": "emphasis"
+        },
+        {
+          "text": "Por lo cual estoy seguro de que ni la muerte, ni la vida, ni ángeles, ni principados, ni potestades, ni lo presente, ni lo por venir, ni lo alto, ni lo profundo, ni ninguna otra cosa creada nos podrá separar del amor de Dios, que es en Cristo Jesús Señor nuestro.",
+          "style": "letter"
+        }
+      ]
+    },
+    {
+      "id": "apocalipsis",
+      "type": "section",
+      "number": "VIII",
+      "title": "Un cielo nuevo y una tierra nueva",
+      "blocks": [
+        {
+          "text": "Vi un cielo nuevo y una tierra nueva; porque el primer cielo y la primera tierra pasaron, y el mar ya no existía más.",
+          "style": "oracle"
+        },
+        {
+          "text": "Y oí una gran voz del cielo que decía: He aquí el tabernáculo de Dios con los hombres, y él morará con ellos; y ellos serán su pueblo, y Dios mismo estará con ellos como su Dios. Enjugará Dios toda lágrima de los ojos de ellos; y ya no habrá muerte, ni habrá más llanto, ni clamor, ni dolor, porque las primeras cosas pasaron.",
+          "style": "epiphany"
+        },
+        {
+          "text": "El que estaba sentado en el trono dijo: He aquí, yo hago nuevas todas las cosas. Y me dijo: Escribe, porque estas palabras son fieles y verdaderas.",
+          "style": "benediction"
+        }
+      ]
+    },
+    {
+      "id": "dedication",
+      "type": "dedication",
+      "title": "Para la congregación",
+      "blocks": [
+        {
+          "text": "Que el Señor les conceda oír su Palabra con oídos del corazón.",
+          "cls": "ded-body"
+        },
+        {
+          "text": "Mediten en ella de día y de noche, y sean como árbol plantado junto a corrientes de agua.",
+          "cls": "ded-body"
+        },
+        {
+          "text": "La paz de Cristo sea con todos ustedes. Amén.",
+          "cls": "ded-love"
+        }
+      ]
+    }
+  ]
+}
