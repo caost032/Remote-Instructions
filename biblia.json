@@ -1,78 +1,286 @@
-"slides": [
 {
-  "id": "salmo1",
-  "type": "section",
-  "number": "I",
-  "title": "El camino del bienaventurado",
-  "blocks": [
+  "meta": {
+    "title": "El Sendero del Bienaventurado",
+    "subtitle": "Salmos y Bienaventuranzas para el alma sedienta",
+    "author": "Sagrada Escritura / Meditación guiada",
+    "lang": "es",
+    "version": "2.0",
+    "icon": "🌿"
+  },
+  "config": {
+    "defaultTheme": "forest",
+    "startAt": 0,
+    "ttsLang": "es-ES",
+    "storageKey": "bienaventurado-v2",
+    "exportTitle": "sendero-bienaventurado"
+  },
+  "slides": [
     {
-      "text": "Bienaventurado el varón que no anduvo en consejo de malos, ni estuvo en camino de pecadores, ni en silla de escarnecedores se ha sentado; sino que en la ley de Jehová está su delicia, y en su ley medita de día y de noche.",
-      "style": "oracle"
+      "id": "cover",
+      "type": "cover",
+      "eyebrow": "Un recorrido interior",
+      "title": "El <em>bienaventurado</em> que confía",
+      "subtitle": "Meditación sobre los Salmos y las Bienaventuranzas",
+      "hint": "Activa la voz con <kbd>L</kbd> · Lectura continua <kbd>Shift+L</kbd>"
     },
     {
-      "text": "Será como árbol plantado junto a corrientes de aguas, que da su fruto en su tiempo, y su hoja no cae; y todo lo que hace, prosperará.",
-      "style": "oracle"
+      "id": "salmo1",
+      "type": "section",
+      "number": "I",
+      "title": "El árbol plantado junto a corrientes",
+      "blocks": [
+        {
+          "text": "Bienaventurado el varón que no anduvo en consejo de malos, ni estuvo en camino de pecadores, ni en silla de escarnecedores se ha sentado; sino que en la ley de Jehová está su delicia, y en su ley medita de día y de noche.",
+          "style": "oracle"
+        },
+        {
+          "text": "Será como árbol plantado junto a corrientes de aguas, que da su fruto en su tiempo, y su hoja no cae; y todo lo que hace, prosperará.",
+          "style": "oracle"
+        },
+        {
+          "text": "No así los malos, que son como el tamo que arrebata el viento. Por tanto, no se levantarán los malos en el juicio, ni los pecadores en la congregación de los justos. Porque Jehová conoce el camino de los justos; mas el camino de los malos perecerá. (Salmo 1)",
+          "style": "oracle"
+        },
+        {
+          "text": "Este salmo no es un código penal, es una canción de cuna para los que han decidido confiar. La bienaventuranza no se gana, se recibe. No es el resultado de un esfuerzo, sino la consecuencia de una raíz: el deleite en la Palabra. Meditar de día y de noche no es una técnica ascética, es un enamoramiento. Cuando amas a alguien, piensas en él sin esfuerzo.",
+          "style": "epiphany"
+        },
+        {
+          "text": "Observa la progresión del pecado: andar (consejo) → estar (camino) → sentarse (silla). El mal comienza como una sugerencia, se vuelve costumbre y termina siendo identidad. Pero la gracia también tiene una progresión inversa: escuchar (deleite) → meditar (rumiar) → permanecer (plantado). Un día te das cuenta de que ya no eres paja arrastrada por el viento, sino árbol con raíces.",
+          "style": "reflection"
+        },
+        {
+          "text": "La promesa no es ausencia de sequía, sino presencia de corriente. Aunque el calor apriete, el árbol junto al agua se mantiene verde. No depende de las circunstancias, sino de la fuente oculta. Por eso sus hojas no caen: la savia del Espíritu sube desde lo profundo. Y todo lo que hace prosperará — tal vez no en el calendario del mundo, pero sí en el calendario del cielo.",
+          "style": "benediction"
+        },
+        {
+          "text": "Señor, arráncame de la silla de los burladores y plántame junto a tu torrente. Que tu Palabra sea mi delicia, no por deber sino por deseo. Hazme árbol, no paja. Amén.",
+          "style": "echo"
+        }
+      ]
     },
     {
-      "text": "No así los malos, que son como el tamo que arrebata el viento. Por tanto, no se levantarán los malos en el juicio, ni los pecadores en la congregación de los justos. Porque Jehová conoce el camino de los justos; mas el camino de los malos perecerá. (Salmo 1, RVR1960)",
-      "style": "oracle"
+      "id": "salmo23",
+      "type": "section",
+      "number": "II",
+      "title": "El Pastor que prepara mesa en la adversidad",
+      "blocks": [
+        {
+          "text": "Jehová es mi pastor; nada me faltará. En lugares de delicados pastos me hará descansar; junto a aguas de reposo me pastoreará. Confortará mi alma; me guiará por sendas de justicia por amor de su nombre.",
+          "style": "whisper"
+        },
+        {
+          "text": "Aunque ande en valle de sombra de muerte, no temeré mal alguno, porque tú estarás conmigo; tu vara y tu cayado me infundirán aliento.",
+          "style": "whisper"
+        },
+        {
+          "text": "Aderezas mesa delante de mí en presencia de mis angustiadores; unges mi cabeza con aceite; mi copa está rebosando. Ciertamente el bien y la misericordia me seguirán todos los días de mi vida, y en la casa de Jehová moraré por largos días. (Salmo 23)",
+          "style": "whisper"
+        },
+        {
+          "text": "Este salmo no habla de un camino sin valles, sino de un pastor que no abandona en el valle. La sombra de muerte es real, pero es sombra, no sustancia. El que anda con el Pastor no evita la oscuridad, la atraviesa con la certeza de la compañía. La vara y el cayado no son instrumentos de castigo, son herramientas de rescate: la vara ahuyenta al lobo, el cayado saca al descarriado del precipicio.",
+          "style": "reflection"
+        },
+        {
+          "text": "La imagen sorprendente: mesa en presencia de enemigos. Mientras los adversarios observan, Dios sirve banquete. No es una huida vergonzosa, es una victoria tranquila. El aceite en la cabeza era símbolo de honor, hospitalidad y consagración. Y la copa rebosa: la bendición no cabe, desborda. El bien y la misericordia no son perseguidores, son escoltas que acompañan cada paso, incluso en el valle.",
+          "style": "epiphany"
+        },
+        {
+          "text": "Y el final no es un destino, es una morada: en la casa de Jehová habitaré por largos días. No un día de visita, sino la vida entera. El pastor no solo te lleva al redil, se queda contigo en él. Así es la confianza: no es tener respuestas, es tener Compañía.",
+          "style": "benediction"
+        }
+      ]
     },
     {
-      "text": "Este salmo no es una receta moral para ganarse el favor de Dios. Es una ventana a dos universos: el de la raíz y el de la nada. El bienaventurado no es el que nunca ha fallado, sino el que ha aprendido dónde no sentarse, con quién no caminar, y en qué deleitarse. Las bienaventuranzas del Nuevo Testamento son hijas de esta primera bienaventuranza hebrea.",
-      "style": "epiphany"
+      "id": "salmo27",
+      "type": "section",
+      "number": "III",
+      "title": "Una cosa he demandado",
+      "blocks": [
+        {
+          "text": "Jehová es mi luz y mi salvación; ¿de quién temeré? Jehová es la fortaleza de mi vida; ¿de quién he de atemorizarme? Cuando se acercaron contra mí los malos para devorar mis carnes, ellos tropezaron y cayeron.",
+          "style": "manifesto"
+        },
+        {
+          "text": "Una cosa he demandado a Jehová, esta buscaré: que esté yo en la casa de Jehová todos los días de mi vida, para contemplar la hermosura de Jehová, y para inquirir en su templo. (Salmo 27:4)",
+          "style": "oracle"
+        },
+        {
+          "text": "No son diez cosas, ni siquiera tres. Una sola: estar en su presencia, contemplar su hermosura. No poder, ni riqueza, ni respuestas teológicas. Belleza. David descubrió que Dios es bello. No solo poderoso, no solo justo, sino hermoso. Y la belleza no se estudia, se contempla. No se analiza, se disfruta. En medio de la guerra, de las acusaciones, de los miedos, él pide lo único que sacia: ver a Dios.",
+          "style": "reflection"
+        },
+        {
+          "text": "“Espera a Jehová; esfuérzate, y aliéntese tu corazón; sí, espera a Jehová.” (v. 14) La espera no es pasiva, es activa. Es un esfuerzo del corazón. Esperar es seguir confiando cuando el silencio se alarga. Pero el salmo no termina en la espera, termina en la certeza: veré la bondad de Jehová en la tierra de los vivientes. No solo en el cielo, aquí. Hoy. Mientras aún hay angustia.",
+          "style": "incantation"
+        }
+      ]
     },
     {
-      "text": "Observa la progresión negativa: andar → estar → sentarse. El pecado comienza como una sugerencia (consejo), luego se convierte en una costumbre (camino), y finalmente en una identidad (silla de escarnecedores). No es un juicio contra los pecadores, sino una advertencia amorosa: no te sientes donde la burla hacia Dios se vuelve tu aire. Porque la burla es la etapa final de la dureza del corazón.",
-      "style": "reflection"
+      "id": "salmo34",
+      "type": "section",
+      "number": "IV",
+      "title": "Gustad y ved que es bueno",
+      "blocks": [
+        {
+          "text": "Bendeciré a Jehová en todo tiempo; sus alabanzas estarán de continuo en mi boca. En Jehová se gloriará mi alma; lo oirán los mansos y se alegrarán. Engrandece a Jehová conmigo, y exaltemos su nombre a una.",
+          "style": "echo"
+        },
+        {
+          "text": "Gustad y ved que es bueno Jehová; dichoso el hombre que confía en él. Temed a Jehová, vosotros sus santos, pues nada falta a los que le temen. Los leoncillos necesitan y tienen hambre; pero los que buscan a Jehová no tendrán falta de ningún bien. (Salmo 34:8-10)",
+          "style": "oracle"
+        },
+        {
+          "text": "David escribe este salmo después de haber escapado de Abimelec fingiendo locura. Está solo, sucio, temblando. Y sin embargo, dice: “Gustad y ved”. La prueba no le ha amargado el paladar. Invita a otros a probar lo mismo que él probó: que Dios es bueno incluso cuando la vida no lo es. No es un optimismo ingenuo, es un testimonio de quien ha sido rescatado.",
+          "style": "flashback"
+        },
+        {
+          "text": "El verbo “gustar” implica experiencia personal, no doctrina oída. La bondad de Dios no se demuestra con argumentos, se degusta con la vida. Como la miel: nadie te puede explicar su dulzura, tienes que ponerla en tu lengua. Así la fe: no es un sistema, es un sabor. Por eso el salmo invita a probar, no a debatir.",
+          "style": "whisper"
+        },
+        {
+          "text": "“Los que buscan a Jehová no tendrán falta de ningún bien.” No dice que tendrán todo lo que quieren, sino que no les faltará el bien necesario. El bien puede ser silencio, puede ser paciencia, puede ser la compañía en la soledad. El bien es lo que realmente necesitas, no siempre lo que pides. Y eso es suficiente.",
+          "style": "benediction"
+        }
+      ]
     },
     {
-      "text": "Pero la esencia no es lo que se evita, sino lo que se ama. La ley de Jehová es su delicia. No la cumple por obligación, la come como postre. La medita de día y de noche. No es un estudio frío, es un rumor constante en el alma. Como un enamorado que repite el nombre de su amada mientras trabaja, el justo rumia las Escrituras hasta que se vuelven parte de su latido.",
-      "style": "whisper"
+      "id": "salmo91",
+      "type": "section",
+      "number": "V",
+      "title": "El refugio secreto",
+      "blocks": [
+        {
+          "text": "El que habita al abrigo del Altísimo morará bajo la sombra del Omnipotente. Diré yo a Jehová: Esperanza mía y castillo mío; mi Dios, en quien confiaré.",
+          "style": "oracle"
+        },
+        {
+          "text": "No te sobrevendrá mal, ni plaga tocará tu morada. Pues a sus ángeles mandará acerca de ti, que te guarden en todos tus caminos. En las manos te llevarán, para que tu pie no tropiece en piedra. (Salmo 91:10-12)",
+          "style": "oracle"
+        },
+        {
+          "text": "Este salmo no es un amuleto, es una declaración de intimidad. “Habitar al abrigo” implica una vida entera bajo el ala protectora, no una visita ocasional. La sombra del Omnipotente no es una metáfora tibia: en el desierto, la sombra es cuestión de vida o muerte. Quien se queda al sol perece. Quien se pone bajo la sombra de la Roca, sobrevive.",
+          "style": "codex"
+        },
+        {
+          "text": "Los ángeles no son criaturas bonitas de postal; son guerreros que custodian cada paso. El salmo no promete ausencia de peligro, sino presencia de guardia. “En las manos te llevarán” — la imagen es de un padre que carga a su hijo sobre piedras afiladas. No evita el camino pedregoso, pero evita que el pie se lastime. Eso es la providencia: no un escudo impenetrable, sino unas manos que te cargan cuando el suelo duele.",
+          "style": "epiphany"
+        },
+        {
+          "text": "El salmo termina con una voz que cambia: ya no habla el peregrino, habla Dios: “Por cuanto en mí ha puesto su amor, yo también lo libraré; le pondré en alto, por cuanto ha conocido mi nombre.” El amor y el conocimiento se entrelazan. No se trata de una fórmula mágica, sino de una relación. El que confía, es guardado. El que ama, es elevado.",
+          "style": "dialogue"
+        }
+      ]
     },
     {
-      "text": "El resultado no es un esfuerzo titánico por ser bueno, sino una vida que da fruto sin esfuerzo aparente. Como un árbol junto al agua: no se estresa por crecer, las raíces ya están en la fuente. Sus hojas no se marchitan, porque la savia de la Palabra sube continuamente. Y todo lo que hace prospera — no en el sentido de riqueza o éxito mundano, sino en el sentido de integridad: lo que empieza, lo termina; lo que siembra, lo cosecha.",
-      "style": "benediction"
+      "id": "salmo103",
+      "type": "section",
+      "number": "VI",
+      "title": "Bendice alma mía",
+      "blocks": [
+        {
+          "text": "Bendice, alma mía, a Jehová, y bendiga todo mi ser su santo nombre. Bendice, alma mía, a Jehová, y no olvides ninguno de sus beneficios. Él es quien perdona todas tus iniquidades, quien sana todas tus dolencias, quien rescata del hoyo tu vida, quien te corona de favores y misericordias.",
+          "style": "incantation"
+        },
+        {
+          "text": "No ha hecho con nosotros según nuestras iniquidades, ni nos ha pagado conforme a nuestros pecados. Porque como la altura de los cielos sobre la tierra, engrandeció su misericordia sobre los que le temen. (Salmo 103:10-11)",
+          "style": "echo"
+        },
+        {
+          "text": "Este salmo es un mandato que el salmista se da a sí mismo: “Bendice, alma mía”. No espera que la gratitud fluya espontáneamente; la provoca. Habla a su propia alma como un padre hablaría a un hijo desanimado: “No olvides, alma. Recuerda el perdón, la sanidad, el rescate, la corona.” La memoria es el órgano de la adoración. El que olvida, se marchita.",
+          "style": "reflection"
+        },
+        {
+          "text": "“Como la altura de los cielos sobre la tierra” es una imagen de distancia infinita. Así de grande es la misericordia de Dios sobre nuestros pecados. No los minimiza, los separa. El arrepentimiento no es una cuenta de castigos, es un traspaso de deuda a la gracia. Y el resultado no es un deudor encadenado, sino un hijo coronado.",
+          "style": "benediction"
+        },
+        {
+          "text": "El salmo reconoce que somos polvo, que nuestros días son como la hierba. Pero la misericordia de Jehová es desde la eternidad hasta la eternidad. Lo temporal se apoya en lo eterno. Por eso podemos bendecir incluso en días secos: porque la fuente no depende del clima.",
+          "style": "whisper"
+        }
+      ]
     },
     {
-      "text": "El contraste es brutal. Los malos son como tamo, paja trillada. No tienen peso, no tienen raíz. El viento los lleva. En la era, el agricultor aventaba el grano y la paja volaba lejos. Así es una vida sin anclaje en Dios: ligera, ruidosa, pero sin sustancia. El salmo no dice que los malos sean inmorales horribles; dice que son aquellos cuya vida no está plantada en la corriente de Dios. Por eso perecen en el juicio: no por castigo arbitrario, sino porque lo que no tiene raíz no puede sostenerse ante la verdad.",
-      "style": "lament"
+      "id": "salmo139",
+      "type": "section",
+      "number": "VII",
+      "title": "Examinado y conocido",
+      "blocks": [
+        {
+          "text": "Oh Jehová, tú me has examinado y conocido. Tú has conocido mi sentarme y mi levantarme; has entendido desde lejos mis pensamientos. Has escudriñado mi andar y mi reposo, y todos mis caminos te son conocidos.",
+          "style": "letter"
+        },
+        {
+          "text": "Porque tú formaste mis entrañas; tú me hiciste en el vientre de mi madre. Te alabaré, porque asombrosa y maravillosamente he sido hecho. (Salmo 139:1-3, 13-14)",
+          "style": "oracle"
+        },
+        {
+          "text": "Ser conocido por Dios es más aterrador y más liberador que cualquier otra cosa. Aterrador porque no podemos esconder nada; liberador porque ya no necesitamos fingir nada. Este salmo es la oración del que se rinde a la transparencia total. “Has entendido desde lejos mis pensamientos” — incluso antes de que los piense, ya los conoces. No hay sorpresas para Dios, y eso, en lugar de asustar, descansa.",
+          "style": "reflection"
+        },
+        {
+          "text": "La respuesta del salmista no es el miedo, sino la alabanza: “Te alabaré, porque asombrosa y maravillosamente he sido hecho.” No soy un accidente cósmico, soy una obra de arte tejida en las tinieblas del vientre. Mi cuerpo, mi psique, mis peculiaridades: todo fue diseñado con intención. La maravilla no es la perfección, es la intencionalidad. Fui querido antes de existir.",
+          "style": "epiphany"
+        },
+        {
+          "text": "El salmo termina con una petición: “Examíname, oh Dios, y conoce mi corazón; pruébame y conoce mis pensamientos; y ve si hay en mí camino de perversidad, y guíame en el camino eterno.” No se trata de un autoexamen neurótico, sino de una invitación a la cirugía divina. Señor, mira lo que yo no puedo ver. Señala lo que yo no quiero ver. Y guíame. Eso es confianza.",
+          "style": "dialogue"
+        }
+      ]
     },
     {
-      "text": "“Jehová conoce el camino de los justos.” No es un conocimiento intelectual, es un conocimiento íntimo, como el de un pastor que sabe la senda por donde anda su oveja. El Señor vigila cada paso, cada tropiezo, cada sed. Y el camino de los malos perecerá — no solo ellos, sino el camino mismo se borrará, como si nunca hubiera existido. El Salmo 1 no termina con un infierno de fuego, sino con la imagen más aterradora: la insignificancia eterna.",
-      "style": "letter"
+      "id": "mateo5",
+      "type": "section",
+      "number": "VIII",
+      "title": "Las bienaventuranzas del Reino",
+      "blocks": [
+        {
+          "text": "Bienaventurados los pobres en espíritu, porque de ellos es el reino de los cielos. Bienaventurados los que lloran, porque ellos recibirán consolación. Bienaventurados los mansos, porque ellos recibirán la tierra por heredad. Bienaventurados los que tienen hambre y sed de justicia, porque ellos serán saciados. (Mateo 5:3-6)",
+          "style": "benediction"
+        },
+        {
+          "text": "Bienaventurados los misericordiosos, porque ellos alcanzarán misericordia. Bienaventurados los de limpio corazón, porque ellos verán a Dios. Bienaventurados los que trabajan por la paz, porque ellos serán llamados hijos de Dios. Bienaventurados los que padecen persecución por causa de la justicia, porque de ellos es el reino de los cielos. (Mateo 5:7-10)",
+          "style": "benediction"
+        },
+        {
+          "text": "Jesús no promete felicidad al que tiene poder, sino al que reconoce su pobreza interior. No felicita al que ríe siempre, sino al que llora con el duelo del mundo. La bienaventuranza no es una emoción, es una condición de reino. Ser pobre en espíritu es saber que sin Dios estamos vacíos. Llorar es no anestesiarse ante el dolor. La mansedumbre no es debilidad, es fuerza bajo control.",
+          "style": "parallel"
+        },
+        {
+          "text": "Hambre y sed de justicia: un deseo que no se aplaca con migajas. Los misericordiosos reciben misericordia — no por mérito, sino por analogía. El limpio de corazón ve a Dios, no porque sus ojos sean perfectos, sino porque su interior ya no tiene doblez. Los que trabajan por la paz son hijos de Dios, porque la paz es el ADN del cielo. Y los perseguidos: el reino les pertenece, no como compensación, sino como presente.",
+          "style": "codex"
+        },
+        {
+          "text": "Jesús invierte los valores del mundo. En las bienaventuranzas, los últimos son primeros, los que pierden ganan, los que se vacían se llenan. No es una ética de autoayuda, es un anuncio de un nuevo orden. Por eso no son mandamientos, son declaraciones: ya sois bienaventurados, ya os pertenece el reino. Solo hay que creerlo y vivirlo.",
+          "style": "manifesto"
+        }
+      ]
     },
     {
-      "text": "El árbol y la paja. Dos imágenes que acompañan a toda la Biblia. El profeta Jeremías también dirá: “Bendito el varón que confía en Jehová… será como árbol plantado junto a las aguas” (Jeremías 17:7-8). Y Jesús dirá: “Todo aquel que oye mis palabras y las hace, le compararé a un varón prudente que edificó su casa sobre la roca” (Mateo 7:24). El Salmo 1 es el ADN de todas las bienaventuranzas evangélicas.",
-      "style": "parallel"
-    },
-    {
-      "text": "Pero no podemos leer este salmo sin sentir el peso de nuestra propia inconsistencia. ¿Quién ha meditado en la ley de día y de noche sin fallar? ¿Quién no se ha sentado alguna vez en la silla de los burladores? Por eso la Biblia no es un manual de autoayuda, sino un espejo que nos quiebra para luego restaurarnos en Cristo. Él es el único Bienaventurado que caminó perfectamente. Y por fe, su justicia se nos acredita. Entonces, plantados en Él, empezamos a dar fruto.",
-      "style": "dialogue"
-    },
-    {
-      "text": "Entonces, ¿qué hacemos esta noche, esta mañana, ahora? No te esfuerces por ser un árbol. Solo pon tus raíces en la corriente. La corriente es la Palabra, pero también la comunión, la oración, el silencio, el sacramento. No se trata de leer la Biblia una hora al día para ganar puntos. Se trata de permitir que la Escritura te lea a ti. Que sus preguntas te incomoden. Que sus promesas te sostengan. Así, casi sin darte cuenta, estarás plantado.",
-      "style": "manifesto"
-    },
-    {
-      "text": "Escucha la invitación del salmo: No te sientes donde se burlan de lo sagrado. No andes donde te enseñan que Dios no importa. Y encuentra tu delicia en Él. No por deber, sino porque has probado y visto que el Señor es bueno. El árbol junto al agua no tiene que esforzarse por estar verde; el agua lo hace verde. Así tú. Solo permanece. Solo bebe. Solo confía.",
-      "style": "incantation"
-    },
-    {
-      "text": "Y al final, cuando el viento de la prueba sople, cuando el juicio de la verdad pase, tú serás hallado de pie. No porque tú te sostuviste, sino porque fuiste sostenido. Tus hojas no caerán, porque la savia del Espíritu sube desde la raíz que es Cristo. Todo lo que hagas prosperará — tal vez no en el calendario del mundo, pero sí en el calendario de la eternidad.",
-      "style": "epiphany"
-    },
-    {
-      "text": "Oremos: Señor, planta nuestro corazón junto a tu torrente. Que nuestra delicia sea tu Palabra. Líbranos de la silla de los escarnecedores y del camino que parece ancho pero termina en vacío. Haznos árboles de justicia, para que otros se refresquen a nuestra sombra. Por Jesucristo, el Bienaventurado por excelencia. Amén.",
-      "style": "benediction"
-    },
-    {
-      "text": "El Salmo 1 no es un código penal, es una canción de cuna para los que han decidido confiar. Cada día podemos elegir el camino de la vida: leer, meditar, callar, adorar, servir. El camino del bienaventurado no es fácil, pero es real. Y al final, solo hay dos destinos: árbol o paja. Que hoy elijas ser árbol.",
-      "style": "reflection"
-    },
-    {
-      "text": "Bienaventurado el que confía. Bienaventurado el que espera. Bienaventurado el que se deleita. Porque Jehová conoce su camino, y ese camino no perecerá.",
-      "style": "echo"
+      "id": "dedication",
+      "type": "dedication",
+      "title": "Para la congregación que busca",
+      "blocks": [
+        {
+          "text": "Que el Señor sea tu luz y tu salvación. No temas.",
+          "cls": "ded-body"
+        },
+        {
+          "text": "Que medites en su Palabra de día y de noche, y seas como árbol plantado junto a corrientes de agua.",
+          "cls": "ded-body"
+        },
+        {
+          "text": "Que gustes y veas que Él es bueno, aunque el valle sea oscuro.",
+          "cls": "ded-body"
+        },
+        {
+          "text": "Y que la paz de Cristo, que sobrepasa todo entendimiento, guarde tu corazón y tu mente.",
+          "cls": "ded-love"
+        },
+        {
+          "text": "Amén.",
+          "cls": "ded-love"
+        }
+      ]
     }
   ]
 }
-]
